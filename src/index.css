@@ -164,4 +164,26 @@ All colors MUST be HSL.
     animation-duration: 1s;
     animation-iteration-count: infinite;
   }
+
+  .screenshot-container {
+    @apply transition-all duration-300;
+  }
+
+  .screenshot-wrapper {
+    @apply overflow-hidden rounded-lg cursor-pointer;
+    transition: var(--transition-smooth);
+  }
+
+  .screenshot-wrapper:hover {
+    @apply shadow-lg;
+    box-shadow: var(--shadow-warm);
+  }
+
+  .screenshot-placeholder {
+    @apply transition-transform duration-300 ease-out;
+  }
+
+  .screenshot-wrapper:hover .screenshot-placeholder {
+    @apply scale-105;
+  }
 }
