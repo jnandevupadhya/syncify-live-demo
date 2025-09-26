@@ -2,12 +2,11 @@ import { useState } from "react";
 import { ProgressIndicator } from "./ProgressIndicator";
 import { Step1 } from "./steps/Step1";
 import { Step2 } from "./steps/Step2";
-import { Step3 } from "./steps/Step3";
 import { Step4 } from "./steps/Step4";
 
 export const SpotifyInstaller = () => {
   const [currentStep, setCurrentStep] = useState(1);
-  const totalSteps = 4;
+  const totalSteps = 3;
 
   const nextStep = () => {
     if (currentStep < totalSteps) {
@@ -22,8 +21,6 @@ export const SpotifyInstaller = () => {
       case 2:
         return <Step2 onNext={nextStep} />;
       case 3:
-        return <Step3 onNext={nextStep} />;
-      case 4:
         return <Step4 />;
       default:
         return <Step1 onNext={nextStep} />;
@@ -38,7 +35,7 @@ export const SpotifyInstaller = () => {
             Spotify Extension Installer
           </h1>
           <p className="text-xl text-muted-foreground">
-            Get your listen-along extension ready in just 4 easy steps
+            Get your listen-along extension ready in just 3 easy steps
           </p>
         </header>
 
