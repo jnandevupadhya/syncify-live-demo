@@ -7,6 +7,11 @@ All colors MUST be HSL.
 */
 
 @layer base {
+  input:disabled:-webkit-autofill {
+    color: #9ca3af;
+    cursor: not-allowed;
+  }
+
   :root {
     --background: 0 0% 6%;
     --foreground: 0 0% 95%;
@@ -39,13 +44,25 @@ All colors MUST be HSL.
     --input: 0 0% 15%;
     --ring: 142 73% 42%;
 
-    --spotify-gradient: linear-gradient(135deg, hsl(142, 73%, 42%), hsl(142, 60%, 35%));
-    --success-gradient: linear-gradient(135deg, hsl(142, 73%, 42%), hsl(142, 80%, 45%));
-    --background-gradient: linear-gradient(180deg, hsl(0, 0%, 6%), hsl(0, 0%, 4%));
-    
+    --spotify-gradient: linear-gradient(
+      135deg,
+      hsl(142, 73%, 42%),
+      hsl(142, 60%, 35%)
+    );
+    --success-gradient: linear-gradient(
+      135deg,
+      hsl(142, 73%, 42%),
+      hsl(142, 80%, 45%)
+    );
+    --background-gradient: linear-gradient(
+      180deg,
+      hsl(0, 0%, 6%),
+      hsl(0, 0%, 4%)
+    );
+
     --shadow-spotify: 0 10px 30px -10px hsl(142 73% 42% / 0.3);
     --shadow-success: 0 10px 30px -10px hsl(142 73% 42% / 0.4);
-    
+
     --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 
     --radius: 0.5rem;
@@ -108,15 +125,183 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
     background: var(--background-gradient);
     min-height: 100vh;
+    user-select: none; /* Standard */
+    -webkit-user-select: none; /* Chrome/Safari */
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none;
   }
 }
 
 @layer utilities {
+  @keyframes pulseX {
+    0% {
+      color: #8b0000;
+    }
+    100% {
+      color: #ff0000;
+    }
+  }
+  @keyframes pulseY {
+    0% {
+      color: #117233;
+    }
+    100% {
+      color: #1db954;
+    }
+  }
+
+  path {
+    transition: fill 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  .container {
+    --uib-size: 40px;
+    --uib-color: white;
+    --uib-speed: 1.65s;
+    --uib-cube-size: calc(var(--uib-size) / 5.5);
+    --uib-arc-1: -80deg;
+    --uib-arc-2: 80deg;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: auto;
+    height: auto;
+  }
+
+  .cube {
+    width: var(--uib-cube-size);
+    height: calc(var(--uib-size) * 0.5);
+    transform-origin: center bottom;
+    transform: rotate(var(var(--uib-arc-1)));
+    animation: metronome var(--uib-speed) linear infinite;
+
+    &::after {
+      content: "";
+      display: block;
+      width: var(--uib-cube-size);
+      height: var(--uib-cube-size);
+      background-color: var(--uib-color);
+      border-radius: 25%;
+      animation: morph var(--uib-speed) linear infinite;
+      transition: background-color 0.3s ease;
+    }
+  }
+
+  @keyframes metronome {
+    0% {
+      transform: rotate(var(--uib-arc-1));
+    }
+
+    5% {
+      transform: rotate(var(--uib-arc-1));
+      animation-timing-function: ease-out;
+    }
+
+    50% {
+      transform: rotate(var(--uib-arc-2));
+    }
+
+    55% {
+      transform: rotate(var(--uib-arc-2));
+      animation-timing-function: ease-out;
+    }
+
+    100% {
+      transform: rotate(var(--uib-arc-1));
+    }
+  }
+
+  @keyframes morph {
+    0%,
+    5% {
+      transform: scaleX(0.75) scaleY(1.25);
+      transform-origin: center left;
+    }
+
+    12.5% {
+      transform: scaleX(1.5);
+      transform-origin: center left;
+    }
+
+    27.5% {
+      transform: scaleX(1);
+      transform-origin: center left;
+    }
+
+    27.5001%,
+    42.5% {
+      transform: scaleX(1);
+      transform-origin: center right;
+    }
+
+    50%,
+    52.5% {
+      transform: scaleX(0.75) scaleY(1.25);
+      transform-origin: center right;
+      animation-timing-function: ease-in;
+    }
+
+    65% {
+      transform: scaleX(1.5);
+      transform-origin: center right;
+    }
+
+    77.5% {
+      transform: scaleX(1);
+      transform-origin: center right;
+    }
+
+    77.5001%,
+    95% {
+      transform: scaleX(1);
+      transform-origin: center left;
+    }
+
+    100% {
+      transform: scaleX(0.75) scaleY(1.25);
+      transform-origin: center left;
+    }
+  }
+
+  .errors {
+    font-family: "Quicksand", sans-serif;
+    @apply transition-opacity duration-500;
+    display: flex;
+    align-items: center;
+  }
+
+  .zoom-container {
+    position: relative;
+    width: auto; /* set your width */
+    height: auto; /* set your height */
+    border-radius: 10px;
+    cursor: zoom-in;
+  }
+
+  .zoom-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    border-radius: 10px;
+    opacity: 0.7;
+  }
+
+  .zoom-container:hover .zoom-image {
+    overflow: hidden;
+    transform: scale(2.3); /* inner zoom */
+    transform-origin: center center; /* zoom from center */
+  }
+
   .installer-button {
-    @apply relative overflow-hidden rounded-2xl px-8 py-4 text-lg font-semibold transition-all duration-300;
+    font-family: "Quicksand", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 600;
+    font-style: normal;
+    @apply relative overflow-hidden rounded-2xl px-8 py-4 text-lg transition-all duration-300;
     background: var(--spotify-gradient);
     box-shadow: var(--shadow-spotify);
-    @apply text-primary-foreground hover:scale-105 active:scale-95;
+    @apply text-primary-foreground;
   }
 
   .success-button {
@@ -165,8 +350,8 @@ All colors MUST be HSL.
   .screenshot-wrapper {
     @apply overflow-hidden rounded-lg cursor-pointer;
     transition: var(--transition-smooth);
+    border-radius: 11px;
   }
-
   .screenshot-wrapper:hover {
     @apply shadow-lg;
     box-shadow: var(--shadow-spotify);
@@ -175,8 +360,39 @@ All colors MUST be HSL.
   .screenshot-placeholder {
     @apply transition-transform duration-300 ease-out;
   }
+}
+.checkmark {
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  animation: draw 0.5s ease forwards 0.2s;
+}
 
-  .screenshot-wrapper:hover .screenshot-placeholder {
-    @apply scale-105;
+/* Hide scrollbar globally */
+html,
+body {
+  overflow: hidden; /* prevent native scroll fighting */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+.fade {
+  transition: opacity 0.3s ease, max-height 0.5s ease 0.5s, ease-out;
+  overflow: hidden;
+}
+
+@keyframes draw {
+  to {
+    stroke-dashoffset: 0;
   }
+}
+
+#scroll-container {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
 }

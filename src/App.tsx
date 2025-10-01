@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
+import SmoothScrollWrapper from "./components/ui/Scrollbar";
+
 
 const queryClient = new QueryClient();
 
@@ -13,6 +15,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <SmoothScrollWrapper>
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
@@ -20,6 +23,7 @@ const App = () => (
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
+      </SmoothScrollWrapper>
     </TooltipProvider>
   </QueryClientProvider>
 );
