@@ -337,10 +337,30 @@ All colors MUST be HSL.
     @apply animate-slide-up-exit;
   }
 
+  @keyframes confetti {
+    0% {
+      transform: translateY(0) rotate(0deg);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(100vh) rotate(720deg);
+      opacity: 0;
+    }
+  }
+
   .confetti {
-    @apply animate-bounce;
-    animation-duration: 1s;
-    animation-iteration-count: infinite;
+    animation: confetti 3s ease-out forwards;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   .screenshot-container {
