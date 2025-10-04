@@ -389,6 +389,19 @@ All colors MUST be HSL.
     }
   }
 
+  @keyframes pulse-border {
+    0%, 100% {
+      box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+    }
+    50% {
+      box-shadow: 0 0 25px rgba(255, 255, 255, 0.2);
+    }
+  }
+
+  .animate-pulse-border {
+    animation: pulse-border 2s ease-in-out infinite;
+  }
+
   .screenshot-container {
     @apply transition-all duration-300;
   }

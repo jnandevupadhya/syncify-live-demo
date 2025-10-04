@@ -37,6 +37,7 @@ export const Step4 = () => {
   const [requests, setRequests] = useState<UserRequest[]>([]);
   const [acceptedUsers, setAcceptedUsers] = useState<AcceptedUser[]>([]);
   const [nextId, setNextId] = useState(1);
+  const [terminalLines, setTerminalLines] = useState<string[]>([]);
 
   useEffect(() => {
     // 1️⃣ Fetch room data
@@ -626,6 +627,76 @@ export const Step4 = () => {
               >
                 Thanks for using our installer! Have fun listening together! 💚
               </p>
+            </div>
+
+            {/* Terminal Window */}
+            <div
+              className={`transition-all duration-500 ease-in-out overflow-hidden ${
+                !showDiv
+                  ? "opacity-100 max-h-[400px] mt-8"
+                  : "opacity-0 max-h-0 mt-0"
+              }`}
+            >
+              <div className="max-w-lg mx-auto">
+                <div className="bg-background/95 backdrop-blur-sm rounded-lg border-2 border-foreground/20 shadow-[0_0_15px_rgba(255,255,255,0.1)] animate-pulse-border overflow-hidden">
+                  {/* Terminal Header */}
+                  <div className="bg-muted/50 px-4 py-2 flex items-center gap-2 border-b border-border/50">
+                    <div className="flex gap-1.5">
+                      <div className="w-3 h-3 rounded-full bg-red-500/80"></div>
+                      <div className="w-3 h-3 rounded-full bg-yellow-500/80"></div>
+                      <div className="w-3 h-3 rounded-full bg-green-500/80"></div>
+                    </div>
+                    <span className="text-xs text-muted-foreground font-mono ml-2">
+                      terminal
+                    </span>
+                  </div>
+
+                  {/* Terminal Content */}
+                  <div className="p-4 h-48 overflow-y-auto font-mono text-sm bg-background/50 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+                    {terminalLines.length === 0 ? (
+                      <div className="text-muted-foreground/50 italic">
+                        Waiting for messages...
+                      </div>
+                    ) : (
+                      terminalLines.map((line, index) => (
+                        <div
+                          key={index}
+                          className="text-foreground/90 mb-1 animate-fade-in"
+                        >
+                          <span className="text-success/70">$</span> {line}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {/* Placeholder Button */}
+                <div className="mt-4 flex justify-center">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const timestamp = new Date().toLocaleTimeString();
+                      const placeholderMessages = [
+                        `[${timestamp}] Connection established`,
+                        `[${timestamp}] User authenticated`,
+                        `[${timestamp}] Processing request...`,
+                        `[${timestamp}] Data received successfully`,
+                        `[${timestamp}] Ready for sync`,
+                      ];
+                      const randomMessage =
+                        placeholderMessages[
+                          Math.floor(Math.random() * placeholderMessages.length)
+                        ];
+                      setTerminalLines((prev) => [...prev, randomMessage]);
+                    }}
+                    className="gap-2"
+                  >
+                    <Plus className="h-3 w-3" />
+                    Add Terminal Line
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
