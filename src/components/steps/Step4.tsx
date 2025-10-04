@@ -672,8 +672,7 @@ export const Step4 = () => {
                       terminalLines.map((line, index) => (
                         <div
                           key={index}
-                          className="transition-all duration-500 ease-in-out opacity-0 max-h-0 animate-[fade-in_0.5s_ease-in-out_forwards] mb-1"
-                          style={{ animationDelay: '0ms' }}
+                          className="animate-[fade-in_0.5s_ease-in-out_forwards] mb-1"
                         >
                           <span className="text-success/70">$</span> {line}
                         </div>
