@@ -287,20 +287,20 @@ export const Step2 = ({ onNext }: Step2Props) => {
           Connect to Spotify
         </h2>
         <p
-          className={`transition-all duration-300 text-lg text-muted-foreground ${
+          className={`transition-all duration-500 ease-in-out text-lg text-muted-foreground overflow-hidden ${
             !hasTokens && hasTokens != null
-              ? "max-h-[1000px] opacity-100 mb-6 "
-              : "opacity-0 max-h-0 mb-0 pb-0 p-0 overflow-hidden"
+              ? "max-h-[500px] opacity-100 mb-6 "
+              : "opacity-0 max-h-0 mb-0"
           }`}
         >
           Follow these steps to get your Spotify app credentials
         </p>
 
         <div
-          className={`transition-all duration-300 overflow-hidden text-left ${
+          className={`transition-all duration-500 ease-in-out overflow-hidden text-left ${
             !hasTokens && hasTokens != null
-              ? "p-4 max-h-[1000px] opacity-100 mb-8"
-              : "opacity-0 max-h-0 mb-0 pb-0 p-0"
+              ? "p-4 max-h-[500px] opacity-100 mb-8"
+              : "opacity-0 max-h-0 mb-0"
           }`}
         >
           <ol
@@ -354,10 +354,10 @@ export const Step2 = ({ onNext }: Step2Props) => {
 
       {hasTokens !== null && (
         <div
-          className={`bg-accent/10 rounded-3xl border border-accent/20 transition-all duration-300 ${
+          className={`bg-accent/10 rounded-3xl border border-accent/20 transition-all duration-500 ease-in-out overflow-hidden ${
             !hasTokens && hasTokens != null
-              ? "p-8 max-h-[1000px] opacity-100"
-              : "opacity-0 max-h-0 mb-0 pb-0"
+              ? "p-8 max-h-[2000px] opacity-100"
+              : "opacity-0 max-h-0 mb-0"
           } `}
         >
           <AccordionItem1

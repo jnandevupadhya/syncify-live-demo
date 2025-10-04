@@ -7,6 +7,7 @@ import { Step4 } from "./steps/Step4";
 export const SpotifyInstaller = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 3;
+  
 
   const nextStep = () => {
     if (currentStep < totalSteps) {
@@ -29,14 +30,22 @@ export const SpotifyInstaller = () => {
 
   return (
     <section data-scrollbar>
-      <div className={`min-h-screen px-4 ${currentStep!=3?"py-12 ":"py-4"}`}>
-        <div className="max-w-4xl mx-auto">
+      <div
+        className={`min-h-screen px-4 ${currentStep != 3 ? "py-12 " : "py-4"}`}
+      >
+        <div
+          className={`${currentStep === 3 ? "w-full" : "max-w-4xl mx-auto"}`}
+        >
           <header
-            className={`text-center transition-transform ${currentStep != 3 ? "mb-12" : "mb-3"}`}
+            className={`text-center transition-transform ${
+              currentStep != 3 ? "mb-12" : "mb-3"
+            }`}
           >
             <h1
-              className={`text-5xl font-bold  bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent transition-all leading-snug ${
-                currentStep != 3 ? "mb-4 max-h-[100px] opacity-100" : "mb-0 h-10 opacity-0"
+              className={`text-5xl font-bold  bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent transition-all duration-1000 leading-snug ${
+                currentStep != 3
+                  ? "mb-4 max-h-[100px] opacity-100"
+                  : "mb-0 h-10 opacity-0"
               }`}
             >
               SpotiSync Room Setup
@@ -57,10 +66,20 @@ export const SpotifyInstaller = () => {
           />
 
           <main className="transition-all duration-400">
-            {renderCurrentStep()}
+            {currentStep === 3 ? (
+              <div className="w-full">{renderCurrentStep()}</div>
+            ) : (
+              renderCurrentStep()
+            )}
           </main>
 
-          <footer className={`text-center text-sm text-muted-foreground transition-all duration-300 origin-bottom ${currentStep!=3?"mt-16 max-h-[100px] opacity-100":"h-0 opacity-0"}`}>
+          <footer
+            className={`text-center text-sm text-muted-foreground transition-all duration-300 origin-bottom ${
+              currentStep != 3
+                ? "mt-16 max-h-[100px] opacity-100"
+                : "h-0 opacity-0"
+            }`}
+          >
             <p>
               Step {currentStep} of {totalSteps} • Spotify Listen-Along
               Extension

@@ -47,7 +47,7 @@ export const ProgressIndicator = ({
       >
         <svg
           viewBox="0 0 960 960"
-          className="w-[150px] h-[150px] transition-colors duration-500"
+          className="w-[150px] h-[150px] transition-colors duration-700"
           fill={
             currentStep === 2
               ? "#1DB954"
