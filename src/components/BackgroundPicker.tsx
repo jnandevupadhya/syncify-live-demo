@@ -10,6 +10,7 @@ interface BackgroundPickerProps {
 export const BackgroundPicker = ({ onBackgroundChange }: BackgroundPickerProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [hasBackground, setHasBackground] = useState(false);
+  const [showActionButtons, setShowActionButtons] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
   const [currentFillType, setCurrentFillType] = useState<FillType>("cover");
   const [blurAmount, setBlurAmount] = useState(0);
@@ -21,18 +22,31 @@ export const BackgroundPicker = ({ onBackgroundChange }: BackgroundPickerProps) 
       const imageUrl = URL.createObjectURL(file);
       setHasBackground(true);
       setIsExpanded(false);
+      setShowActionButtons(false);
       onBackgroundChange(imageUrl, currentFillType, blurAmount);
     }
   };
 
   const handleRemoveBackground = () => {
     setHasBackground(false);
+    setShowActionButtons(false);
     setShowOptions(false);
     setIsExpanded(false);
     onBackgroundChange(null, currentFillType, 0);
     setBlurAmount(0);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
+    }
+  };
+
+  const handleMainIconClick = () => {
+    if (hasBackground) {
+      setShowActionButtons(!showActionButtons);
+      if (showActionButtons) {
+        setShowOptions(false);
+      }
+    } else {
+      setIsExpanded(!isExpanded);
     }
   };
 
@@ -58,15 +72,15 @@ export const BackgroundPicker = ({ onBackgroundChange }: BackgroundPickerProps) 
     <div className="fixed top-6 left-6 z-50 flex items-center gap-2">
       {/* Main Icon Button */}
       <button
-        onClick={() => setIsExpanded(!isExpanded)}
+        onClick={handleMainIconClick}
         className="w-12 h-12 rounded-full bg-background/80 backdrop-blur-md border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center hover:scale-110 active:scale-95"
       >
-        <ImageIcon className="w-5 h-5 text-foreground" />
+        <ImageIcon className="w-5 h-5 text-foreground transition-transform duration-300" />
       </button>
 
       {/* Choose Background Button (Expanded) */}
       {isExpanded && !hasBackground && (
-        <div className="animate-fade-in">
+        <div className="transition-all duration-300 ease-in-out animate-in fade-in slide-in-from-left-2">
           <input
             ref={fileInputRef}
             type="file"
@@ -85,8 +99,8 @@ export const BackgroundPicker = ({ onBackgroundChange }: BackgroundPickerProps) 
       )}
 
       {/* Action Buttons (When Background is Set) */}
-      {hasBackground && (
-        <div className="flex items-center gap-2 animate-fade-in">
+      {hasBackground && showActionButtons && (
+        <div className="flex items-center gap-2 transition-all duration-300 ease-in-out animate-in fade-in slide-in-from-left-2">
           {/* Pencil Icon - Fill Type & Blur Options */}
           <div className="relative">
             <button
@@ -99,7 +113,7 @@ export const BackgroundPicker = ({ onBackgroundChange }: BackgroundPickerProps) 
 
             {/* Options Panel */}
             {showOptions && (
-              <div className="absolute top-12 left-0 bg-background/95 backdrop-blur-md border border-white/20 rounded-2xl shadow-2xl p-4 min-w-[200px] animate-scale-in">
+              <div className="absolute top-12 left-0 bg-background/95 backdrop-blur-md border border-white/20 rounded-2xl shadow-2xl p-4 min-w-[200px] transition-all duration-300 ease-in-out animate-in fade-in zoom-in-95">
                 {/* Fill Type Options */}
                 <div className="mb-4">
                   <p className="text-xs font-semibold mb-2 text-muted-foreground">Fill Type</p>
