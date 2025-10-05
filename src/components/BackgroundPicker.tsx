@@ -14,12 +14,14 @@ export const BackgroundPicker = ({ onBackgroundChange }: BackgroundPickerProps) 
   const [showOptions, setShowOptions] = useState(false);
   const [currentFillType, setCurrentFillType] = useState<FillType>("cover");
   const [blurAmount, setBlurAmount] = useState(0);
+  const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const imageUrl = URL.createObjectURL(file);
+      setCurrentImageUrl(imageUrl);
       setHasBackground(true);
       setIsExpanded(false);
       setShowActionButtons(false);
@@ -32,6 +34,7 @@ export const BackgroundPicker = ({ onBackgroundChange }: BackgroundPickerProps) 
     setShowActionButtons(false);
     setShowOptions(false);
     setIsExpanded(false);
+    setCurrentImageUrl(null);
     onBackgroundChange(null, currentFillType, 0);
     setBlurAmount(0);
     if (fileInputRef.current) {
@@ -52,13 +55,13 @@ export const BackgroundPicker = ({ onBackgroundChange }: BackgroundPickerProps) 
 
   const handleFillTypeChange = (fillType: FillType) => {
     setCurrentFillType(fillType);
-    onBackgroundChange(null, fillType, blurAmount);
+    onBackgroundChange(currentImageUrl, fillType, blurAmount);
   };
 
   const handleBlurChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newBlur = parseInt(e.target.value);
     setBlurAmount(newBlur);
-    onBackgroundChange(null, currentFillType, newBlur);
+    onBackgroundChange(currentImageUrl, currentFillType, newBlur);
   };
 
   const fillTypeOptions = [

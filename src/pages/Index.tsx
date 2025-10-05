@@ -30,8 +30,7 @@ const Index = () => {
   const handleBackgroundChange = (imageUrl: string | null, fillType: "cover" | "contain" | "fill" | "none", blur: number) => {
     if (imageUrl !== null) {
       setBackgroundImage(imageUrl);
-    } else if (imageUrl === null && blur === 0) {
-      // Only clear background when explicitly removing (blur is reset to 0)
+    } else if (imageUrl === null) {
       setBackgroundImage(null);
     }
     setBackgroundFillType(fillType);
@@ -54,15 +53,21 @@ const Index = () => {
         }}
       />
       
-      {/* Blur Overlay with Border */}
+      {/* Glassy Blur Overlay */}
       {backgroundImage && backgroundBlur > 0 && (
         <div 
-          className="fixed inset-0 transition-all duration-300 ease-in-out"
+          className="fixed transition-all duration-300 ease-in-out"
           style={{
+            top: `${Math.min(backgroundBlur * 2, 40)}px`,
+            left: `${Math.min(backgroundBlur * 2, 40)}px`,
+            right: `${Math.min(backgroundBlur * 2, 40)}px`,
+            bottom: `${Math.min(backgroundBlur * 2, 40)}px`,
             backdropFilter: `blur(${backgroundBlur}px)`,
             WebkitBackdropFilter: `blur(${backgroundBlur}px)`,
-            border: `${Math.min(backgroundBlur / 2, 8)}px solid rgba(255, 255, 255, ${backgroundBlur / 40})`,
-            boxShadow: `inset 0 0 ${backgroundBlur * 2}px rgba(255, 255, 255, ${backgroundBlur / 50})`,
+            background: `rgba(255, 255, 255, ${backgroundBlur / 100})`,
+            borderRadius: `${Math.min(backgroundBlur * 2, 24)}px`,
+            border: `1px solid rgba(255, 255, 255, ${Math.min(backgroundBlur / 20, 0.3)})`,
+            boxShadow: `0 8px 32px 0 rgba(0, 0, 0, ${Math.min(backgroundBlur / 50, 0.37)})`,
             zIndex: 10,
             pointerEvents: 'none',
           }}
