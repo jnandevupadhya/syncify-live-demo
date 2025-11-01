@@ -4,6 +4,16 @@ import AccordionItem from "../ui/accordion1";
 import ClientSecretInput from "../ui/SecretInput";
 import { getScrollbar } from "../ui/Scrollbar";
 import AccordionItem1 from "../ui/accordion2";
+import img1static from "../../assets/img1static.png";
+import img2static from "../../assets/img2static.png";
+import img3static from "../../assets/img3static.png";
+import img4static from "../../assets/img4static.png";
+
+import gif1 from "../../assets/1.gif";
+import gif2 from "../../assets/2.gif";
+import gif3 from "../../assets/3.gif";
+import gif4 from "../../assets/4.gif";
+import { toast } from "@/hooks/use-toast";
 
 // Add MagicZoom to the Window type for TypeScript
 
@@ -12,11 +22,11 @@ interface Step2Props {
 }
 
 export const Step2 = ({ onNext }: Step2Props) => {
-  useEffect(() => {
-    setTimeout(() => {
-      onNext();
-    }, 3000);
-  });
+  // useEffect(() => {
+  //   setTimeout(() => {
+  //     onNext();
+  //   }, 3000);
+  // });
   const width = 600;
   const height = 1000;
 
@@ -48,7 +58,7 @@ export const Step2 = ({ onNext }: Step2Props) => {
         }
 
         const data = await res.json();
-        console.log(data);
+        console.log("data:", data);
 
         // Update states based on backend response
         setHasTokens(data.valid); // updates hasTokens
@@ -142,10 +152,22 @@ export const Step2 = ({ onNext }: Step2Props) => {
     overrideClientId?: string,
     overrideClientSecret?: string
   ) => {
-    const id = overrideClientId ?? clientId;
-    const secret = overrideClientSecret ?? clientSecret;
-    // Reset previous errors
+    const password = localStorage.getItem("pass"); // or however you store it
 
+    const res = await fetch("http://127.0.0.1:8000/api/get-creds", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password }),
+    });
+    if (!res.ok) throw new Error("Unauthorized");
+    const creds = await res.json();
+    const id = creds.client_id;
+    const secret = creds.client_secret;
+    // Reset previous errors
+    const rt = localStorage.getItem("rt");
+    if (rt) {
+      return;
+    }
     const popup = window.open(
       "",
       "spotifyAuth",
@@ -158,44 +180,7 @@ export const Step2 = ({ onNext }: Step2Props) => {
     popup.location.href =
       "http://127.0.0.1:8000/api/redirect/?client_id=" + trimmedId;
 
-    // // Check if both are 32 characters long
-    // if (trimmedId.length !== 32 || trimmedSecret.length !== 32) {
-    //   if (trimmedId.length !== 32) setClientId("");
-    //   if (trimmedSecret.length !== 32) setClientSecret("");
-    //   setSubmissionError("invalidLength"); // special error for UI
-
-    //   return;
-    // }
-
-    setIsProcessing(true);
-
     try {
-      // Send PUT request with clientId and clientSecret as query params
-      // const response = await fetch(
-      //   "http://127.0.0.1:8000/api/get-auth-token/",
-      //   {
-      //     method: "PUT",
-      //     headers: { "Content-Type": "application/json" },
-      //     body: JSON.stringify({
-      //       client_id: trimmedId,
-      //       client_secret: trimmedSecret,
-      //     }),
-      //   }
-      // );
-
-      // const data = await response.json();
-
-      // // Backend returned an error immediately
-      // console.log(data.ok ? "Auth token fetched" : "Failed to fetch data");
-
-      // if (data.error) {
-      //   setSubmissionError(data.error);
-      //   return;
-      // }
-
-      // Instead of looking for auth_url, always open our backend redirect
-      // Pass client_id so backend knows which one
-
       setTimeout(() => {
         if (!popup || popup.closed || typeof popup.closed === "undefined") {
           // ❌ Popup was blocked
@@ -209,74 +194,37 @@ export const Step2 = ({ onNext }: Step2Props) => {
       // RACE BETWEEN CALLBACK AND WINDOW CLOSE
       let callbackDone = false;
 
-      const pollCallback = async () => {
-        try {
-          while (!callbackDone && popup && !popup.closed) {
-            const res = await fetch("http://127.0.0.1:8000/api/callback");
-            const data = await res.json();
-            if (data.denied) {
-              console.log("manually denied");
-              setSubmissionError("denied");
-              popup.close();
-            }
-            if (data.ok) {
-              callbackDone = true;
-              if (popup && !popup.closed) popup.close();
-              break;
-            }
-            if (data.denied || (data.ok && !popup.closed)) popup.close();
-            await new Promise((r) => setTimeout(r, 500)); // wait 500ms before next poll
+      try {
+        while (!callbackDone && popup && !popup.closed) {
+          const res = await fetch("http://127.0.0.1:8000/api/callback");
+          const data = await res.json();
+
+          if (data.denied) {
+            console.log("manually denied");
+            popup.close();
           }
-        } catch (err) {
-          console.error(err);
+
+          if (data.ok) {
+            callbackDone = true;
+
+            // ✅ save the refresh token locally (React/browser)
+            if (data.rt) {
+              localStorage.setItem("rt", data.rt);
+              console.log("Saved refresh token:", data.rt);
+            }
+
+            if (popup && !popup.closed) popup.close();
+            break;
+          }
+
+          if (data.denied || (data.ok && !popup.closed)) popup.close();
+          await new Promise((r) => setTimeout(r, 500)); // wait 500ms before next poll
         }
-      };
-
-      // Promise that resolves when popup closes
-      const popupPromise = new Promise<void>((resolve) => {
-        const timer = setInterval(() => {
-          if (!popup || popup.closed) {
-            clearInterval(timer);
-            resolve();
-          }
-        }, 500);
-      });
-
-      // Wait for either callback completion or popup closure
-      await Promise.race([pollCallback(), popupPromise]);
-
-      if (!callbackDone) {
-        console.warn("Popup closed before completing authorization");
-        setSubmissionError("denied");
-        setIsCredsValid(true);
-        setIsProcessing(false);
-        return;
-      }
-
-      // fallback: in case backend already had a token cached
-      const tokenCheck = await fetch("http://127.0.0.1:8000/api/token-check/");
-      const tokenData = await tokenCheck.json();
-
-      console.log("tokenData", tokenData);
-      setHasTokens(tokenData.valid);
-      setIsPremium(tokenData.premium);
-      setIsCached(true);
-      setFirstTimeSubmit(true);
-
-      if (!tokenData.valid) {
-        setSubmissionError("invalid");
-      } else if (tokenData && !tokenData.premium) {
-        setClientId("");
-        setClientSecret("");
-        setSubmissionError("notPremium");
-        setHasTokens(false);
-        setIsCached(false);
+      } catch (err) {
+        console.error(err);
       }
     } catch (err) {
       console.error("Error verifying Spotify credentials:", err);
-      setSubmissionError("invalid");
-    } finally {
-      setIsProcessing(false);
     }
   };
 
@@ -319,17 +267,30 @@ export const Step2 = ({ onNext }: Step2Props) => {
             </li>
             <AccordionItem title="2. Create a new app or select an existing one">
               <ul className="list-disc space-y-1">
-                <li>Click "Create App" in the Spotify Developer Dashboard</li>
+                <li className="text-red-600 font-bold">
+                  NOTE! Make sure you’re using the same Premium account for both
+                  app creation and authorization
+                </li>
+
+                <li>
+                  Click on "Create App" in the Spotify Developer Dashboard
+                  (Check the top right to switch accounts)
+                </li>
                 <li>Give it a name and description, it may be anything</li>
                 <li>
                   Add{" "}
                   <a
+                    title="Click to copy"
                     className="text-primary hover:underline font-medium cursor-pointer select-text"
                     onClick={() => {
                       navigator.clipboard.writeText(
                         "http://127.0.0.1:8000/api/callback"
                       );
-                      alert("Copied to clipboard!");
+                      toast({
+                        title: "Copied!",
+                        description: `http://127.0.0.1:8000/api/callback copied to clipboard.`,
+                        duration: 3000, // auto-dismiss after 3 seconds
+                      });
                     }}
                   >
                     http://127.0.0.1:8000/api/callback
@@ -381,31 +342,45 @@ export const Step2 = ({ onNext }: Step2Props) => {
                   <div className="screenshot-placeholder  bg-gradient-to-br from-green-500/20 to-green-600/20 rounded-lg border-2 border-green-500/30 aspect-video flex items-center justify-center text-green-600">
                     <div
                       className="zoom-container"
-                      onMouseMove={(e) => {
-                        const img = e.currentTarget.querySelector("img");
+                      onMouseEnter={(e) => {
+                        const img =
+                          e.currentTarget.querySelector<HTMLImageElement>(
+                            "img"
+                          );
                         if (!img) return;
 
-                        img.style.opacity = "1"; // now it will fade in smoothly
-                        const { left, top, width, height } =
-                          e.currentTarget.getBoundingClientRect();
-                        const x = ((e.clientX - left) / width) * 100;
-                        const y = ((e.clientY - top) / height) * 100;
-                        img.style.transformOrigin = `${x}% ${y}%`;
+                        // Play GIF
+                        img.src = gif1;
+
+                        // Zoom logic
+                        img.style.opacity = "1";
+                        // const { left, top, width, height } =
+                        //   e.currentTarget.getBoundingClientRect();
+                        // const x = ((e.clientX - left) / width) * 100;
+                        // const y = ((e.clientY - top) / height) * 100;
+                        // img.style.transformOrigin = `${x}% ${y}%`;
                         img.style.transform = "scale(1.5)";
                       }}
                       onMouseLeave={(e) => {
-                        const img = e.currentTarget.querySelector("img");
+                        const img =
+                          e.currentTarget.querySelector<HTMLImageElement>(
+                            "img"
+                          );
                         if (!img) return;
 
-                        img.style.opacity = "0.7"; // fade out smoothly
+                        // Stop GIF by replacing with static frame
+                        img.src = img1static; // you need a static version of your gif
+
+                        // Reset zoom
+                        img.style.opacity = "0.7";
                         img.style.transformOrigin = "center center";
                         img.style.transform = "scale(1)";
                       }}
                     >
                       <img
-                        src="/src/assets/1.png"
+                        src={img1static}
                         alt="Zoom Example"
-                        className="zoom-image "
+                        className="zoom-image"
                       />
                     </div>
                   </div>
@@ -420,29 +395,45 @@ export const Step2 = ({ onNext }: Step2Props) => {
                   <div className="screenshot-placeholder bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-lg border-2 border-blue-500/30 aspect-video flex items-center justify-center text-blue-600">
                     <div
                       className="zoom-container"
-                      onMouseMove={(e) => {
-                        const img = e.currentTarget.querySelector("img");
+                      onMouseEnter={(e) => {
+                        const img =
+                          e.currentTarget.querySelector<HTMLImageElement>(
+                            "img"
+                          );
                         if (!img) return;
 
-                        img.style.opacity = "1"; // now it will fade in smoothly
-                        const { left, top, width, height } =
-                          e.currentTarget.getBoundingClientRect();
-                        const x = ((e.clientX - left) / width) * 100;
-                        const y = ((e.clientY - top) / height) * 100;
-                        img.style.transformOrigin = `${x}% ${y}%`;
+                        // Play GIF
+                        img.src = gif2;
+
+                        // Zoom logic
+                        img.style.opacity = "1";
+                        // const { left, top, width, height } =
+                        //   e.currentTarget.getBoundingClientRect();
+                        // const x = ((e.clientX - left) / width) * 100;
+                        // const y = ((e.clientY - top) / height) * 100;
+                        // img.style.transformOrigin = `${x}% ${y}%`;
+                        img.style.transformOrigin = `30% 50%`;
+
                         img.style.transform = "scale(1.5)";
                       }}
                       onMouseLeave={(e) => {
-                        const img = e.currentTarget.querySelector("img");
+                        const img =
+                          e.currentTarget.querySelector<HTMLImageElement>(
+                            "img"
+                          );
                         if (!img) return;
 
-                        img.style.opacity = "0.7"; // fade out smoothly
+                        // Stop GIF by replacing with static frame
+                        img.src = img2static; // you need a static version of your gif
+
+                        // Reset zoom
+                        img.style.opacity = "0.7";
                         img.style.transformOrigin = "center center";
                         img.style.transform = "scale(1)";
                       }}
                     >
                       <img
-                        src="/src/assets/2.png"
+                        src={img2static}
                         alt="Zoom Example"
                         className="zoom-image"
                       />
@@ -459,29 +450,45 @@ export const Step2 = ({ onNext }: Step2Props) => {
                   <div className="screenshot-placeholder bg-gradient-to-br from-purple-500/20 to-purple-600/20 rounded-lg border- border-purple-500/30 aspect-video flex items-center justify-center text-purple-600">
                     <div
                       className="zoom-container"
-                      onMouseMove={(e) => {
-                        const img = e.currentTarget.querySelector("img");
+                      onMouseEnter={(e) => {
+                        const img =
+                          e.currentTarget.querySelector<HTMLImageElement>(
+                            "img"
+                          );
                         if (!img) return;
 
-                        img.style.opacity = "1"; // now it will fade in smoothly
-                        const { left, top, width, height } =
-                          e.currentTarget.getBoundingClientRect();
-                        const x = ((e.clientX - left) / width) * 100;
-                        const y = ((e.clientY - top) / height) * 100;
-                        img.style.transformOrigin = `${x}% ${y}%`;
+                        // Play GIF
+                        img.src = gif3;
+
+                        // Zoom logic
+                        img.style.opacity = "1";
+                        // const { left, top, width, height } =
+                        //   e.currentTarget.getBoundingClientRect();
+                        // const x = ((e.clientX - left) / width) * 100;
+                        // const y = ((e.clientY - top) / height) * 100;
+                        // img.style.transformOrigin = `${x}% ${y}%`;
+                        img.style.transformOrigin = `10% 50%`;
+
                         img.style.transform = "scale(1.5)";
                       }}
                       onMouseLeave={(e) => {
-                        const img = e.currentTarget.querySelector("img");
+                        const img =
+                          e.currentTarget.querySelector<HTMLImageElement>(
+                            "img"
+                          );
                         if (!img) return;
 
-                        img.style.opacity = "0.7"; // fade out smoothly
+                        // Stop GIF by replacing with static frame
+                        img.src = img3static; // you need a static version of your gif
+
+                        // Reset zoom
+                        img.style.opacity = "0.7";
                         img.style.transformOrigin = "center center";
                         img.style.transform = "scale(1)";
                       }}
                     >
                       <img
-                        src="/src/assets/3.png"
+                        src={img3static}
                         alt="Zoom Example"
                         className="zoom-image"
                       />
@@ -498,29 +505,43 @@ export const Step2 = ({ onNext }: Step2Props) => {
                   <div className="screenshot-placeholder bg-gradient-to-br from-red-500/20 to-red-600/20 rounded-lg border-2 border-red-800/10 aspect-video flex items-center justify-center text-red-600">
                     <div
                       className="zoom-container"
-                      onMouseMove={(e) => {
-                        const img = e.currentTarget.querySelector("img");
+                      onMouseEnter={(e) => {
+                        const img =
+                          e.currentTarget.querySelector<HTMLImageElement>(
+                            "img"
+                          );
                         if (!img) return;
 
-                        img.style.opacity = "1"; // now it will fade in smoothly
-                        const { left, top, width, height } =
-                          e.currentTarget.getBoundingClientRect();
-                        const x = ((e.clientX - left) / width) * 100;
-                        const y = ((e.clientY - top) / height) * 100;
-                        img.style.transformOrigin = `${x}% ${y}%`;
+                        // Play GIF
+                        img.src = gif4;
+
+                        // Zoom logic
+                        img.style.opacity = "1";
+                        // const { left, top, width, height } =
+                        //   e.currentTarget.getBoundingClientRect();
+                        // const x = ((e.clientX - left) / width) * 100;
+                        // const y = ((e.clientY - top) / height) * 100;
+                        // img.style.transformOrigin = `${x}% ${y}%`;
                         img.style.transform = "scale(1.5)";
                       }}
                       onMouseLeave={(e) => {
-                        const img = e.currentTarget.querySelector("img");
+                        const img =
+                          e.currentTarget.querySelector<HTMLImageElement>(
+                            "img"
+                          );
                         if (!img) return;
 
-                        img.style.opacity = "1"; // fade out smoothly
+                        // Stop GIF by replacing with static frame
+                        img.src = img4static; // you need a static version of your gif
+
+                        // Reset zoom
+                        img.style.opacity = "0.7";
                         img.style.transformOrigin = "center center";
                         img.style.transform = "scale(1)";
                       }}
                     >
                       <img
-                        src="/src/assets/4.png"
+                        src={img4static}
                         alt="Zoom Example"
                         className="zoom-image"
                       />
@@ -546,11 +567,12 @@ export const Step2 = ({ onNext }: Step2Props) => {
               hasTokens != null ? "opacity-0" : "opacity-100"
             }`}
           >
-            <span className="inline-flex items-center justify-center mr-14">
-              <div className="container">
-                <div className="cube"></div>
-              </div>
-              <span>Checking cached credentials...</span>
+            <span className="inline-flex items-center justify-center mr-5">
+              <div className="animate-spin rounded-full h-6 w-6 border-2 border-white/90 border-t-transparent mt-[22px] mr-2"></div>
+
+              <span className="mt-5 text-2xl">
+                Checking cached credentials...
+              </span>
             </span>
           </div>
         </div>
@@ -821,12 +843,12 @@ export const Step2 = ({ onNext }: Step2Props) => {
         </div>
 
         {/* Cached tokens exist */}
-        {hasTokens != null && (
+        {
           <div
-            className={`transition-opacity duration-300  items-center justify-center ${
+            className={`transition-all duration-300 flex flex-col items-center justify-center ${
               !hasTokens || !isCached
-                ? "opacity-0 pointer-events-none mb-0 h-0"
-                : "opacity-100 flex flex-col"
+                ? "opacity-0 pointer-events-none mb-0 max-h-0 "
+                : "opacity-100  max-h-[1000px]"
             }`}
           >
             <p
@@ -873,7 +895,7 @@ export const Step2 = ({ onNext }: Step2Props) => {
                     setIsPremium(false);
                     setFirstTimeSubmit(false);
                   }}
-                  className="installer-button  hover:!bg-red-600 cursor-pointer opacity-80 hover:opacity-100 hover:scale-105 active:scale-95 text-white"
+                  className="installer-button  hover:!bg-red-600 cursor-pointer opacity-60 hover:opacity-100 hover:scale-105 active:scale-95 text-white"
                   style={{ background: "#CF0000" }}
                 >
                   {"<!>"} Change Credentials
@@ -881,7 +903,7 @@ export const Step2 = ({ onNext }: Step2Props) => {
               )}
             </div>
           </div>
-        )}
+        }
       </div>
     </div>
   );

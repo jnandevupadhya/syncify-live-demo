@@ -321,13 +321,36 @@ All colors MUST be HSL.
 
   .installer-button {
     font-family: "Quicksand", sans-serif;
-    font-optical-sizing: auto;
     font-weight: 600;
-    font-style: normal;
-    @apply relative overflow-hidden rounded-2xl px-8 py-4 text-lg transition-all duration-300;
-    background: var(--spotify-gradient);
-    box-shadow: var(--shadow-spotify);
-    @apply text-primary-foreground;
+    position: relative;
+    overflow: hidden;
+    border-radius: 10px;
+    padding: 1rem 2rem;
+    font-size: 1.125rem;
+    background: linear-gradient(145deg, #168b3f, #147237);
+    box-shadow: 4px 4px 10px rgba(255, 255, 255, 0.1) inset,
+      0 2px 6px rgba(0, 0, 0, 0.08);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, all 0.3s ease;
+  }
+
+  .installer-button::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to bottom right,
+      rgba(255, 255, 255, 0.03),
+      rgba(0, 0, 0, 0.03)
+    );
+    mix-blend-mode: overlay;
+    pointer-events: none;
+  }
+
+  .installer-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12) inset,
+      0 4px 8px rgba(0, 0, 0, 0.08);
+    background: linear-gradient(145deg, #1cad4f, #1b9447);
   }
 
   .success-button {
@@ -339,6 +362,7 @@ All colors MUST be HSL.
 
   .step-card {
     @apply rounded-3xl bg-card p-8 shadow-xl border border-border/50 backdrop-blur-sm;
+    background-color: #000000a1;
     transition: var(--transition-smooth);
   }
 
@@ -457,6 +481,11 @@ All colors MUST be HSL.
     transform: scale(1.2);
   }
 
+  .blur-target {
+    /* whatever element you’re blurring */
+    transition: filter 0.2s ease; /* smooth blur transition */
+  }
+
   .screenshot-container {
     @apply transition-all duration-300;
   }
@@ -487,6 +516,9 @@ body {
   overflow: hidden; /* prevent native scroll fighting */
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE 10+ */
+  min-width: 800px;
+  min-height: 600px;
+  overflow: hidden;
 }
 
 html::-webkit-scrollbar,
@@ -511,10 +543,9 @@ body::-webkit-scrollbar {
   overflow: auto;
 }
 
-
 .logs-container {
   overflow-y: auto;
-  scrollbar-width: thin;              /* For Firefox */
+  scrollbar-width: thin; /* For Firefox */
   scrollbar-color: rgba(255, 255, 255, 0.404) transparent; /* For Firefox */
 }
 
@@ -530,4 +561,8 @@ body::-webkit-scrollbar {
 .logs-container::-webkit-scrollbar-thumb {
   background-color: rgba(255, 255, 255, 0.411);
   border-radius: 10px;
+}
+
+.queues {
+  background-color: #00000079;
 }

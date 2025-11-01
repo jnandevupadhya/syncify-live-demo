@@ -7,9 +7,9 @@ interface Step1Props {
 
 export const Step1 = ({ onNext }: Step1Props) => {
   const [isRunning, setIsRunning] = useState(false);
-  useEffect(() => {setTimeout(() => {
-    onNext();
-  }, 3000);});
+  // useEffect(() => {setTimeout(() => {
+  //   onNext();
+  // }, 3000);});
   useEffect(() => {
     setIsRunning(false);
     const handleRunSetup = async () => {
@@ -51,14 +51,14 @@ export const Step1 = ({ onNext }: Step1Props) => {
           !isRunning ? "opacity-100 max-h-[500px] mb-8" : "opacity-0 max-h-0 mb-0"
         }`}
       >
-        Welcome to SpotiSync Setup!
+        Welcome to Syncify Setup!
       </h2>
       <p
         className={`text-lg text-muted-foreground leading-relaxed transition-all duration-500 ease-in-out overflow-hidden ${
           !isRunning ? "opacity-100 max-h-[500px] mb-8" : "opacity-0 max-h-0 mb-0"
         }`}
       >
-        Let's get your SpotiSync room up and running. First, we need to set up
+        Let's get your Syncify room up and running. First, we need to set up
         the basic environment. Run the setup.bat file, and click yes if prompted
         for admin privileges.
       </p>
@@ -67,7 +67,7 @@ export const Step1 = ({ onNext }: Step1Props) => {
         !isRunning ? "opacity-100 max-h-[500px]" : "opacity-0 max-h-0"
       }`}>
         <span className="flex items-center justify-center mr-8">
-          <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray border-t-transparent mr-2"></div>
+          <div className="animate-spin rounded-full h-6 w-6 border-2 border-white/90 border-t-transparent mr-2"></div>
           Stalking setup.bat
         </span>
         <p className="text-sm text-muted-foreground mt-4">

@@ -1,13 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "../ui/button";
-import { Plus, Check, X, MoreVertical } from "lucide-react";
+import { Check, X, MoreVertical } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import reqNotif from "../../sounds/newReq.mp3";
+import accNotif from "../../sounds/accepted.mp3";
+import leaveNotif from "../../sounds/left.mp3";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
+import SmoothScrollWrapper from "../ui/Scrollbar";
 
 interface UserRequest {
   id: number;
@@ -41,6 +46,13 @@ export const Step4 = () => {
   const [nextId, setNextId] = useState(1);
   const [terminalLines, setTerminalLines] = useState<string[]>([]);
   const terminalContentRef = useRef<HTMLDivElement>(null);
+  const newReqAudio = new Audio(reqNotif);
+  newReqAudio.volume = 0.3;
+  const accReqAudio = new Audio(accNotif);
+  accReqAudio.volume = 0.3;
+  const leftAudio = new Audio(leaveNotif);
+  leftAudio.volume = 0.3;
+  const originalTitle = "Syncify";
 
   useEffect(() => {
     if (!terminalContentRef.current) return;
@@ -128,6 +140,7 @@ export const Step4 = () => {
 
             // Toast after adding
             setTimeout(() => {
+              if (!newRequest.whitelisted) newReqAudio.play();
               toast({
                 title: "Request Added",
                 description: `${user.name} added to queue`,
@@ -144,6 +157,22 @@ export const Step4 = () => {
               );
             }, 50);
 
+            document.title = `${user.name} wants to join`;
+            setTimeout(() => {
+              document.title = originalTitle;
+            }, 5000);
+            // const flashText = `${originalTitle} - ${user.name} wants to join`;
+            // let flashes = 0;
+            // const flashInterval = setInterval(() => {
+            //   document.title = flashes % 2 === 0 ? flashText : originalTitle;
+            //   flashes++;
+            //   if (flashes >= 10) {
+            //     // 3 flashes = 6 toggles
+            //     clearInterval(flashInterval);
+            //     document.title = originalTitle; // restore
+            //   }
+            // }, 500); // toggle every 500ms
+
             return [...prevRequests, newRequest];
           });
 
@@ -159,7 +188,35 @@ export const Step4 = () => {
           }, 100);
         }
       }
+      if (msg.type === "user_left") {
+        const user = msg.user;
+        const animationDuration = 500; // match your CSS animation duration
+        leftAudio.play();
+        // Mark as removing
+        setRequests((prev) =>
+          prev.map((req) =>
+            req.key === user.key ? { ...req, isRemoving: true } : req
+          )
+        );
+        setAcceptedUsers((prev) =>
+          prev.map((u) => (u.key === user.key ? { ...u, isRemoving: true } : u))
+        );
+
+        // Show toast
+        toast({
+          title: "User Left",
+          description: `${user.name} has left the session`,
+          duration: 1000,
+        });
+
+        // Actually remove after animation
+        setTimeout(() => {
+          setRequests((prev) => prev.filter((req) => req.key !== user.key));
+          setAcceptedUsers((prev) => prev.filter((u) => u.key !== user.key));
+        }, animationDuration);
+      }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useEffect(() => {
     // store all timeouts for this render
@@ -170,6 +227,10 @@ export const Step4 = () => {
         // schedule auto-accept after 1s
         req.whitelisted = true;
         const timerId = window.setTimeout(() => {
+          document.title = `${req.username} joined (whitelist)`;
+          setTimeout(() => {
+            document.title = originalTitle;
+          }, 5000);
           acceptRequest(req.id);
           console.log(`${req.username} (id ${req.id}) auto-accepted ✅`);
         }, 1000);
@@ -182,6 +243,7 @@ export const Step4 = () => {
     return () => {
       timers.forEach((t) => clearTimeout(t));
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [requests, isUserWhitelisted]);
 
   const [room, setRoom] = useState<Room>({
@@ -200,7 +262,7 @@ export const Step4 = () => {
     if (roomName && roomName != "") {
       setRoom((prev) => ({ ...prev, name: roomName }));
     } else {
-      setRoom((prev) => ({ ...prev, name: "SpotiSync Control Panel" }));
+      setRoom((prev) => ({ ...prev, name: "Syncify Control Panel" }));
     }
 
     const roomText = localStorage.getItem("roomText")?.trim();
@@ -225,7 +287,7 @@ export const Step4 = () => {
 
     const timeout = setTimeout(() => {
       if (inputRef.current.value.trim() == "")
-        inputRef.current.value = "SpotiSync control panel";
+        inputRef.current.value = "Syncify control panel";
       if (textRef.current.value.trim() == "") {
         textRef.current.size = "roooom ID:".length;
         textRef.current.value = "roooom ID:";
@@ -238,61 +300,8 @@ export const Step4 = () => {
     };
   }, [room]);
 
-  const [confettiPieces, setConfettiPieces] = useState<
-    Array<{ id: number; left: number; delay: number; emoji: string }>
-  >([]);
-
-  useEffect(() => {
-    setShowDiv(true);
-    // Generate confetti pieces
-    const pieces = Array.from({ length: 20 }, (_, i) => ({
-      id: i,
-      left: Math.random() * 100,
-      delay: Math.random() * 2,
-      emoji: ["🎉", "🎊", "✨", "🌟", "💫"][Math.floor(Math.random() * 5)],
-    }));
-    setConfettiPieces(pieces);
-
-    setTimeout(() => {
-      setShowDiv(false);
-    }, 3000);
-
-    setTimeout(() => {
-      setShowQueues(true);
-    }, 2000);
-  }, []);
-
-  const [showDiv, setShowDiv] = useState(true);
-  const [showQueues, setShowQueues] = useState(false);
-
-  // const addRequest = (user: { name: string; key: string }) => {
-  //   const newRequest: UserRequest = {
-  //     id: nextId,
-  //     username: user.name,
-  //     key: user.key, // ← store the key here
-  //     isAdding: true,
-  //     isRemoving: false,
-  //     disabled: false,
-  //   };
-
-  //   setRequests([...requests, newRequest]);
-  //   setNextId(nextId + 1);
-
-  //   setTimeout(() => {
-  //     setRequests((prev) =>
-  //       prev.map((req) =>
-  //         req.id === newRequest.id ? { ...req, isAdding: false } : req
-  //       )
-  //     );
-  //   }, 50);
-  //   toast({
-  //     title: "Request Added",
-  //     description: `${newRequest.username} added to queue`,
-  //     duration: 1000,
-  //   });
-  // };
-
   const acceptRequest = async (id: number) => {
+    accReqAudio.play();
     console.log("Entered accept func");
     const request = requests.find((req) => req.id === id);
     console.log(request);
@@ -537,17 +546,15 @@ export const Step4 = () => {
 
   return (
     <div
-      className="absolute inset-x-0 top-[234px] bottom-8 flex items-center overflow-visible justify-center w-full max-h-[calc(100vh-234px-2rem)]"
-      style={{ height: "calc(100vh - 234px - 2rem)" }}
+      className="relative flex flex-col w-full max-h-[calc(100vh-20.7%-2rem)] mt-[7.7%] overflow-visible"
+      style={{ height: "calc(100vh-20.7%-2rem)" }}
     >
-      <div className="flex gap-12 w-full mx-auto slide-up-enter -translate-y-1/4">
+      <div className=" flex gap-12 w-full mx-auto slide-up-enter -translate-y-1/4">
         {/* Left Queue - Active Users */}
         <div
-          className={`crafty absolute top-1/2 translate-x-1/4 -translate-y-1/2 w-1/4 max-w-sm z-10 transition-opacity duration-300 ${
-            !showDiv ? "opacity-100" : "opacity-0"
-          }`}
+          className={`opacity-100 crafty absolute top-[25vh] translate-x-[5vw] -translate-y-1/2 w-1/4 max-w-sm z-10 transition-opacity duration-300 `}
         >
-          <div className="bg-card/80 backdrop-blur-sm rounded-xl p-6 border border-border shadow-2xl min-h-[100px]">
+          <div className="queues bg-card/80 backdrop-blur-sm rounded-xl p-6 border border-border shadow-2xl min-h-[100px]">
             <h3 className="text-3xl text-center font-semibold text-primary mb-4">
               Accepted Users
             </h3>
@@ -606,7 +613,7 @@ export const Step4 = () => {
                                   clipRule="evenodd"
                                   d="M343.939,138.178c-68.255,2.582-68.302,70.007-68.302,70.006   c0,0-1.951-67.404-68.302-70.006c-24.021,0-64.889,26.108-64.889,87.082c0,62.697,133.191,177.589,133.191,177.589   c49.23-49.23,133.015-116.61,133.19-177.589C408.998,164.286,367.959,138.178,343.939,138.178z"
                                   fill={`${
-                                    !user.whitelisted ? "#FEE1E3" : "#FFB6C1"
+                                    !user.whitelisted ? "#808080" : "#FFB6C1"
                                   }`}
                                   fillRule="evenodd"
                                 />
@@ -650,6 +657,11 @@ export const Step4 = () => {
                             <DropdownMenuItem
                               onClick={() => toggleDisable(user.id)}
                               className="cursor-pointer text-[18px]"
+                              title={
+                                user.disabled
+                                  ? "Allow user to control playback?"
+                                  : "Click to stop user from controlling playback"
+                              }
                             >
                               {user.disabled
                                 ? "Enable Control"
@@ -658,6 +670,7 @@ export const Step4 = () => {
                             <DropdownMenuItem
                               onClick={() => removeAcceptedUser(user.id)}
                               className="cursor-pointer font-normal text-[20px] text-red-500"
+                              title="Kick user and disable new requests from this user for 30 seconds"
                             >
                               Remove User
                             </DropdownMenuItem>
@@ -687,59 +700,25 @@ export const Step4 = () => {
               onChange={(e) =>
                 setRoom((prev) => ({ ...prev, name: e.target.value }))
               }
-              placeholder="SpotiSync control panel"
+              placeholder="Syncify control panel"
               autoCorrect="off"
               autoCapitalize="off"
               spellCheck={false}
               // disabled={acceptedUsers.length != 0}
-              className={`jersey bg-transparent border-none outline-none text-4xl font-bold text-center transition-opacity duration-300 placeholder:text-muted-foreground ${
-                roomVisible ? "opacity-100" : "opacity-0"
-              }`}
+              className={`opacity-100 jersey bg-transparent border-none outline-none text-4xl font-bold text-center transition-opacity duration-300 placeholder:text-muted-foreground `}
             />
           </div>
           {/* Middle / Stepcard / Center Content - Main Step Card */}
           <div className="flex-1 text-center max-h-[365px] pt-0 relative">
             {/* Confetti Animation */}
 
-            <div className="relative step-card max-w-lg mx-auto max-h-[365px] p-0 overflow-hidden">
-              {confettiPieces.map((piece) => (
-                <div
-                  key={piece.id}
-                  className="absolute text-2xl confetti pointer-events-none"
-                  style={{
-                    left: `${piece.left}%`,
-                    animationDelay: `${piece.delay}s`,
-                    top: "-20px",
-                  }}
-                >
-                  {piece.emoji}
-                </div>
-              ))}
-              <div className="flex flex-col items-center justify-center text-center relative">
-                <div
-                  className={`flex flex-col justify-center transition-all duration-300 ease-in-out overflow-hidden ${
-                    showDiv
-                      ? "opacity-100 max-h-[500px] mb-8"
-                      : "opacity-0 max-h-0 mb-0"
-                  }`}
-                >
-                  <div className="text-7xl mt-0 z-20 mb-6 animate-bounce">
-                    🎉
-                  </div>
-
-                  <h2 className="jersey text-4xl font-bold mb-4 text-success">
-                    ALL DONE!
-                  </h2>
-                  <p className="text-xl text-muted-foreground leading-relaxed">
-                    Your Spotify listen-along extension is ready to rock!
-                  </p>
-                </div>
+            <div
+              className="relative step-card mx-auto max-h-[38vh] max-w-[47.4vw] p-0 overflow-hidden"
+              style={{ paddingTop: 50 }}
+            >
+              <div className="flex flex-col  items-center justify-center text-center relative">
                 <h2
-                  className={`jersey flex flex-row pr-10 justify-center w-full transition-all duration-1000 items-center text-center text-3xl font-bold mb-4 text-success ${
-                    showDiv
-                      ? "opacity-0 absolute max-h-0"
-                      : "opacity-70 max-h-[100px]"
-                  }`}
+                  className={`opacity-0 absolute max-h-0 jersey flex flex-row pr-10 justify-center w-full transition-all duration-1000 items-center text-center text-3xl font-bold mb-4 text-success }`}
                 >
                   <input
                     type="text"
@@ -756,36 +735,109 @@ export const Step4 = () => {
                     autoCorrect="off"
                     autoCapitalize="off"
                     spellCheck={false}
-                    disabled={showDiv}
                     // disabled={acceptedUsers.length != 0}
                     className={`bg-transparent border-none outline-none text-3xl font-bold text-center transition-opacity duration-300 placeholder:text-muted-foreground ${
                       roomVisible ? "opacity-100" : "opacity-0"
                     }`}
                   />
-                  {room.id}
+                  <span
+                    title="Click to copy room ID"
+                    onClick={() => {
+                      navigator.clipboard
+                        .writeText(String(room.id))
+                        .then(() => {
+                          toast({
+                            title: "Copied!",
+                            description: `Room ID ${room.id} copied to clipboard.`,
+                            duration: 1000, // auto-dismiss after 3 seconds
+                          });
+                        })
+                        .catch((err) => {
+                          toast({
+                            title: "Error",
+                            description: "Failed to copy to clipboard",
+                            variant: "destructive",
+                            duration: 1000, // auto-dismiss after 3 seconds
+                          });
+                          console.error(err);
+                        });
+                    }}
+                    className="cursor-pointer transition-all hover:text-purple-300 hover:scale-110"
+                  >
+                    {room.id}
+                  </span>
                 </h2>
               </div>
 
               <div
-                className={`bg-success/20 border border-success/30 rounded-2xl transition-all duration-500 ease-in-out overflow-hidden ${
-                  !showDiv
-                    ? "opacity-100 max-h-[200px] p-6"
-                    : "opacity-0 max-h-0"
-                }`}
+                className={`opacity-100 max-h-[54.8%] p-4 bg-success/20 border border-success/30 rounded-2xl transition-all duration-500 ease-in-out overflow-hidden `}
               >
-                <h3 className="jersey text-3xl font-semibold mb-3 flex items-center justify-center">
-                  What's Next?
-                </h3>
                 <ul className="crafty font-normal text-[20px] text-muted-foreground space-y-2 text-left">
                   <li className="flex items-start">
                     <span className="text-lg mr-2">👥</span>
-                    <span>Share the extension file with your friends</span>
+                    <span>
+                      Share the
+                      <span
+                        title="Click to copy the extension link"
+                        onClick={() => {
+                          navigator.clipboard
+                            .writeText(
+                              "https://github.com/jnandevupadhya/syncify/tree/main/extension#-syncify-extension--join-listening-sessions"
+                            )
+                            .then(() => {
+                              toast({
+                                title: "Copied!",
+                                description: `Extension link copied to clipboard.`,
+                                duration: 1000, // auto-dismiss after 3 seconds
+                              });
+                            })
+                            .catch((err) => {
+                              toast({
+                                title: "Error",
+                                description: "Failed to copy to clipboard",
+                                variant: "destructive",
+                                duration: 1000, // auto-dismiss after 3 seconds
+                              });
+                              console.error(err);
+                            });
+                        }}
+                        className="text-success cursor-pointer transition-all hover:text-purple-300 hover:scale-110"
+                      >
+                        {" extension link "}
+                      </span>
+                      with your friends :)
+                    </span>
                   </li>
                   <li className="flex items-start">
                     <span className="text-lg mr-2">💬</span>
                     <span>
                       Ask them to enter{" "}
-                      <span className="text-success">{room.id}</span>
+                      <span
+                        title="Click to copy room ID"
+                        onClick={() => {
+                          navigator.clipboard
+                            .writeText(String(room.id))
+                            .then(() => {
+                              toast({
+                                title: "Copied!",
+                                description: `Room ID ${room.id} copied to clipboard.`,
+                                duration: 1000, // auto-dismiss after 3 seconds
+                              });
+                            })
+                            .catch((err) => {
+                              toast({
+                                title: "Error",
+                                description: "Failed to copy to clipboard",
+                                variant: "destructive",
+                                duration: 1000, // auto-dismiss after 3 seconds
+                              });
+                              console.error(err);
+                            });
+                        }}
+                        className="text-success cursor-pointer transition-all hover:text-purple-300 hover:scale-110"
+                      >
+                        {room.id}
+                      </span>
                     </span>
                   </li>
                   <li className="flex items-start">
@@ -796,117 +848,110 @@ export const Step4 = () => {
               </div>
 
               <p
-                className={`crafty text-[18px] text-muted-foreground transition-all duration-500 ease-in-out overflow-hidden ${
-                  !showDiv
-                    ? "opacity-100 max-h-[500px] mt-6"
-                    : "opacity-0 max-h-0 mt-0"
-                }`}
+                className={`opacity-100 max-h-[500px] mt-3 crafty text-[18px] text-muted-foreground transition-all duration-500 ease-in-out overflow-hidden `}
               >
-                You, your friends, your music, all together :] 💚
+                You, your friends, your music, all together C: 💜
               </p>
             </div>
 
             {/* Terminal Window */}
+
             <div
-              className={`transition-all duration-500 ease-in-out overflow-hidden ${
-                !showDiv
-                  ? "opacity-100 max-h-[400px] mt-8"
-                  : "opacity-0 max-h-0 mt-0"
-              }`}
+              className={`opacity-100 max-h-[30.04vh] mt-[2.96vh] transition-all duration-500 ease-in-out overflow-hidden `}
             >
-              <div className="max-w-lg mx-auto">
-                <div className="bg-background/95 backdrop-blur-sm rounded-lg border-2 border-foreground/20 shadow-[0_0_15px_rgba(255,255,255,0.1)] animate-pulse-border overflow-hidden">
-                  {/* Logs Header */}
-                  <div className="bg-muted/50 px-4 py-2 flex items-center gap-2 border-b border-border/50">
-                    <div className="flex gap-1.5">
-                      <div className="w-3 h-3 rounded-full bg-red-500/80"></div>
-                      <div className="w-3 h-3 rounded-full bg-yellow-500/80"></div>
-                      <div className="w-3 h-3 rounded-full bg-green-500/80"></div>
-                    </div>
-                    <span className="text-xs text-muted-foreground font-mono ml-2">
-                      logs
-                    </span>
-                  </div>
-
-                  {/* Logs Content */}
-                  <div
-                    ref={terminalContentRef}
-                    className="cascadia logs-container font-extralight p-4 h-48 overflow-y-auto font-mono text-sm bg-background/50 text-left"
-                  >
-                    {terminalLines.length === 0 ? (
-                      <div className="text-muted-foreground/50 italic">
-                        Waiting for messages...
-                      </div>
-                    ) : (
-                      terminalLines.map((line, index) => (
-                        <div
-                          key={index}
-                          className="animate-[fade-in_0.5s_ease-in-out_forwards] mb-1"
-                        >
-                          <span className="text-success/70">$</span> {line}
+              {
+                <SmoothScrollWrapper>
+                  <div className="max-w-lg mx-auto">
+                    <div className="bg-background/50  rounded-lg  border-2 border-foreground/10 overflow-hidden">
+                      {/* Logs Header */}
+                      <div className="bg-muted/50 px-4 py-2 flex items-center gap-2">
+                        <div className="flex gap-1.5 transition-colors duration-300">
+                          <div
+                            className={`w-3 h-3 rounded-full ${
+                              terminalLines.length == 0
+                                ? "bg-gray-500/80"
+                                : "bg-red-500/80"
+                            } `}
+                          ></div>
+                          <div
+                            className={`w-3 h-3 rounded-full ${
+                              terminalLines.length == 0
+                                ? "bg-gray-500/80"
+                                : "bg-yellow-500/80"
+                            } `}
+                          ></div>
+                          <div
+                            className={`w-3 h-3 rounded-full ${
+                              terminalLines.length == 0
+                                ? "bg-gray-500/80"
+                                : "bg-green-500/80"
+                            } `}
+                          ></div>
                         </div>
-                      ))
-                    )}
+                        <span className="text-xs text-muted-foreground font-mono ml-2">
+                          logs
+                        </span>
+                      </div>
+
+                      {/* Logs Content */}
+
+                      <div
+                        ref={terminalContentRef}
+                        className="cascadia logs-container font-extralight p-[1.5vh] h-[24vh] overflow-y-auto font-mono text-sm bg-background/50 text-left"
+                      >
+                        {terminalLines.length === 0 ? (
+                          <div className="text-muted-foreground/50 italic">
+                            Waiting for messages...
+                          </div>
+                        ) : (
+                          terminalLines.map((line, index) => (
+                            <div
+                              key={index}
+                              className="animate-[fade-in_0.5s_ease-in-out_forwards] mb-1"
+                            >
+                              <span className="text-success/70">$</span> {line}
+                            </div>
+                          ))
+                        )}
+                      </div>
+
+                      {/* log content end */}
+                    </div>
                   </div>
-                </div>
-
-                {/* Placeholder Button */}
-                {/* <div className="mt-4 flex justify-center">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      const timestamp = new Date().toLocaleTimeString();
-                      const placeholderMessages = [
-                        `[${timestamp}] Connection established`,
-                        `[${timestamp}] User authenticated`,
-                        `[${timestamp}] Processing request...`,
-                        `[${timestamp}] Data received successfully`,
-                        `[${timestamp}] Ready for sync`,
-                      ];
-                      const randomMessage =
-                        placeholderMessages[
-                          Math.floor(Math.random() * placeholderMessages.length)
-                        ];
-                      setTerminalLines((prev) => [...prev, randomMessage]);
-                    }}
-                    className="gap-2"
-                  >
-                    <Plus className="h-3 w-3" />
-                    Add Log Line
-                  </Button>
-                </div> */}
-              </div>
+                </SmoothScrollWrapper>
+              }
+              {/* logs end */}
             </div>
-          </div>
-        </div>
 
-        {/* Right Queue - Join Requests */}
-        <div
-          className={`  absolute right-0 top-1/2 -translate-x-1/4 -translate-y-1/2 w-1/4 max-w-sm z-10 transition-opacity duration-300 ${
-            !showDiv ? "opacity-100" : "opacity-0"
-          }`}
-        >
-          <div className="crafty bg-card/80 backdrop-blur-sm rounded-xl p-6 border border-border shadow-2xl min-h-[100px]">
-            <h3 className="text-3xl text-center font-semibold text-primary mb-4">
-              Join Requests
-            </h3>
-            <div className="">
-              <div className="flex items-center justify-center text-center">
-                <p
-                  className={`text-muted-foreground text-lg ${
-                    requests.length == 0
-                      ? "opacity-100 max-h-[40px]"
-                      : "opacity-0 max-h-0`"
-                  }`}
-                >
-                  No requests in queue
-                </p>
-              </div>
-              {requests.map((request) => (
-                <div
-                  key={request.id}
-                  className={`
+            {/* Terminal window end */}
+          </div>
+
+          {/* step card end */}
+
+          {/* Right Queue - Join Requests */}
+          <div
+            className={`opacity-100 absolute right-0 top-[25vh] translate-x-[-5vw] -translate-y-1/2 w-1/4 max-w-sm z-10 transition-opacity duration-300 `}
+          >
+            <div className="queues crafty bg-card/80 backdrop-blur-sm rounded-xl p-6 border border-border shadow-2xl min-h-[100px]">
+              <h3 className="text-3xl text-center font-semibold text-primary mb-4">
+                Join Requests
+              </h3>
+              <div className="">
+                <div className="flex items-center justify-center text-center">
+                  <p
+                    className={`text-muted-foreground text-lg ${
+                      requests.length == 0
+                        ? "opacity-100 max-h-[40px]"
+                        : "opacity-0 max-h-0`"
+                    }`}
+                  >
+                    No requests in queue
+                  </p>
+                </div>
+                {requests.map((request) => (
+                  <div
+                    key={request.id}
+                    className={`
     transition-all duration-500 ease-in-out 
     ${
       request.isRemoving
@@ -916,50 +961,46 @@ export const Step4 = () => {
         : "opacity-100 translate-y-0 max-h-[200px] mb-4"
     }
   `}
-                >
-                  <div className="bg-secondary rounded-lg p-4 border border-border">
-                    <div className="">
-                      <div className="flex items-center -translate-y-1/4 justify-start">
-                        <h3 className="font-normal text-2xl">
-                          {request.username}
-                        </h3>
-                      </div>
-                      <p className="text-lg text-muted-foreground -translate-y-1/3">
-                        ID: {request.key.slice(0, 10)}...
-                      </p>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          className="flex-1 h-8 text-lg gap-1 bg-green-600 text-white hover:bg-green-700"
-                          onClick={() => acceptRequest(request.id)}
-                        >
-                          <Check className="h-3 w-3" />
-                          Accept
-                        </Button>
+                  >
+                    <div className="bg-secondary rounded-lg p-4 border border-border">
+                      <div className="">
+                        <div className="flex items-center -translate-y-1/4 justify-start">
+                          <h3 className="font-normal text-2xl">
+                            {request.username}
+                          </h3>
+                        </div>
+                        <p className="text-lg text-muted-foreground -translate-y-1/3">
+                          ID: {request.key.slice(0, 10)}...
+                        </p>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="flex-1 h-8 text-lg gap-1 bg-green-600 text-white hover:bg-green-700"
+                            onClick={() => acceptRequest(request.id)}
+                          >
+                            <Check className="h-3 w-3" />
+                            Accept
+                          </Button>
 
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          className="flex-1 h-8 text-lg gap-1"
-                          onClick={() => rejectRequest(request.id)}
-                        >
-                          <X className="h-3 w-3" />
-                          Reject
-                        </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="flex-1 h-8 text-lg gap-1"
+                            onClick={() => rejectRequest(request.id)}
+                          >
+                            <X className="h-3 w-3" />
+                            Reject
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
-          <div className="flex items-center mt-5 flex-col justify-center">
-            {/* <Button size="sm" variant="outline" className="w-auto gap-2">
-              <Plus className="h-4 w-4" />
-              Add Request
-            </Button> */}
-          </div>
+          {/* right queue end */}
         </div>
       </div>
     </div>
