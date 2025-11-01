@@ -3,12 +3,11 @@ import {
   BackgroundPicker,
   BackgroundPickerRef,
 } from "@/components/ui/BackgroundPicker";
-import { useEffect, useRef, useState } from "react";
+import { PasswordProtection } from "@/components/PasswordProtection";
+import { useState, useRef } from "react";
 
 const Index = () => {
-  //localStorage.setItem("warningClicked", "false");
-
-
+  const [isUnlocked, setIsUnlocked] = useState(false);
   const [backgroundImage, setBackgroundImage] = useState<string | null>(null);
 
   const [backgroundBlur, setBackgroundBlur] = useState(0);
@@ -25,7 +24,15 @@ const Index = () => {
     setBackgroundBlur(blur);
   };
 
-  // Render either warning or main page
+  // Show password protection first, then main panel
+  if (!isUnlocked) {
+    return (
+      <div className="h-full w-full relative">
+        <PasswordProtection onUnlock={() => setIsUnlocked(true)} />
+      </div>
+    );
+  }
+
   return (
     <div className="h-full w-full relative">
       {/* Background Image Layer */}

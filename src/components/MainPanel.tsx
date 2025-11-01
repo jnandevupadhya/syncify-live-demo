@@ -1,18 +1,18 @@
 import { useEffect, useRef, useState } from "react";
-import { Button } from "../ui/button";
+import { Button } from "@/components/ui/button";
 import { Check, X, MoreVertical } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import reqNotif from "../../sounds/newReq.mp3";
-import accNotif from "../../sounds/accepted.mp3";
-import leaveNotif from "../../sounds/left.mp3";
+import reqNotif from "@/sounds/newReq.mp3";
+import accNotif from "@/sounds/accepted.mp3";
+import leaveNotif from "@/sounds/left.mp3";
 
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "../ui/dropdown-menu";
-import SmoothScrollWrapper from "../ui/Scrollbar";
+} from "@/components/ui/dropdown-menu";
+import SmoothScrollWrapper from "@/components/ui/Scrollbar";
 
 interface UserRequest {
   id: number;
@@ -40,7 +40,7 @@ interface Room {
   text: string;
 }
 
-export const Step4 = () => {
+export const MainPanel = () => {
   const [requests, setRequests] = useState<UserRequest[]>([]);
   const [acceptedUsers, setAcceptedUsers] = useState<AcceptedUser[]>([]);
   const [nextId, setNextId] = useState(1);

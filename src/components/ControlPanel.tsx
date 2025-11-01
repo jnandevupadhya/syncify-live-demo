@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
-import { Step4 } from "./steps/Step4";
+import { MainPanel } from "./MainPanel";
 import { BackgroundPickerRef } from "./ui/BackgroundPicker";
 
 type Props = {
@@ -19,8 +19,8 @@ export const SpotifyInstaller = ({ bgRef, bgPickerRef }: Props) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const renderCurrentStep = () => {
-    return <Step4 />;
+  const renderMainPanel = () => {
+    return <MainPanel />;
   };
 
   return (
@@ -48,7 +48,7 @@ export const SpotifyInstaller = ({ bgRef, bgPickerRef }: Props) => {
           </div>
 
           <main className="transition-all duration-400">
-            <div className="w-full">{renderCurrentStep()}</div>
+            <div className="w-full">{renderMainPanel()}</div>
           </main>
         </div>
       </div>
