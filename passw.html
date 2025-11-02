@@ -247,7 +247,7 @@
           while (!callbackDone && !popup.closed) {
             const poll = await fetch("http://127.0.0.1:8000/api/callback");
             const data = await poll.json();
-            console.log(data);
+            //console.log(data);
             if(data.denied){
               console.error("Denied manually:", data.error);
               popup.close();
@@ -257,12 +257,12 @@
               callbackDone = true;
               if (data.rt) {
                 localStorage.setItem("rt", data.rt);
-                console.log("Saved refresh token:", data.rt);
+                //console.log("Saved refresh token:", data.rt);
               }
               popup.close();
               break;
             }
-            await new Promise((r) => setTimeout(r, 1000));
+            await new Promise((r) => setTimeout(r, 2000));
           }
         } catch (err) {
           console.error("Spotify setup failed:", err);
@@ -294,7 +294,7 @@
 
         try {
           const response = await fetch(
-            "http://127.0.0.1:8000/api/unlock-page",
+            "http://localhost:8000/api/unlock-page",
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -309,7 +309,7 @@
             showToast("Access Granted");
             await runSpotifySetup();
             localStorage.setItem("pass", password);
-            setTimeout(() => window.location.reload(), 1000);
+            setTimeout(() => window.location.reload(), 500);
           } else {
             showToast(data.message || "Invalid password", "destructive");
             passwordInput.value = "";

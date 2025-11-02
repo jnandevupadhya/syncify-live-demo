@@ -16,7 +16,7 @@ const Index = () => {
 
   useEffect(() => {
     const checkUnlock = async () => {
-      const res = await fetch("http://127.0.0.1:8000/api/check-unlock", {
+      const res = await fetch("http://localhost:8000/api/check-unlock", {
         credentials: "include",
       });
       const data = await res.json();
@@ -36,16 +36,18 @@ const Index = () => {
   };
 
   // Show password protection first, then main panel
-  if (!isUnlocked) {
-    return (
-      <div className="h-full w-full relative">
-        <PasswordProtection onUnlock={() => setIsUnlocked(true)} />
-      </div>
-    );
-  }
+  // if (!isUnlocked) {
+  //   return (
+  //     <div className="h-full w-full relative">
+  //       <PasswordProtection onUnlock={() => setIsUnlocked(true)} />
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="h-full w-full relative">
+      
+
       {/* Background Image Layer */}
 
       <div
@@ -88,6 +90,7 @@ const Index = () => {
           ref={bgPickerRef}
           onBackgroundChange={handleBackgroundChange}
         />
+        
         <SpotifyInstaller bgRef={bgRef} bgPickerRef={bgPickerRef} />
       </div>
     </div>
