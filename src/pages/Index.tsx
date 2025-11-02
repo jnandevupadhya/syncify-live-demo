@@ -36,13 +36,13 @@ const Index = () => {
   };
 
   // Show password protection first, then main panel
-  // if (!isUnlocked) {
-  //   return (
-  //     <div className="h-full w-full relative">
-  //       <PasswordProtection onUnlock={() => setIsUnlocked(true)} />
-  //     </div>
-  //   );
-  // }
+  if (!isUnlocked) {
+    return (
+      <div className="h-full w-full relative">
+        <PasswordProtection onUnlock={() => setIsUnlocked(true)} />
+      </div>
+    );
+  }
 
   return (
     <div className="h-full w-full relative">
