@@ -71,7 +71,6 @@ SPOTIFY_AUTH_URL = "https://accounts.spotify.com/authorize"
 SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token"
 REDIRECT_URI = "http://127.0.0.1:8000/api/callback"
 SCOPES = "user-read-playback-state user-modify-playback-state user-read-currently-playing user-read-private"
-pending_auth: dict[str, dict[str, str]] = {}
 state["env_valid"] = False
 terminal_logs: list[str] = []
 
@@ -443,7 +442,7 @@ def get_base_url():
         return "http://localhost:8000"
     
 
-async def get_room(max_retries=5, retry_delay=1):
+async def get_room():
     """
     Registers or reuses a room.
     - If a cached room (matching BASE_URL) exists, reuse it.
@@ -457,27 +456,9 @@ async def get_room(max_retries=5, retry_delay=1):
             return cached
 
         # If no cached room found, create a new one
-        print("[reg_room] No cached room found. Registering new room...")
-        retries = 0
-
-        while True:
-            room_id = str(random.randint(10000, 99999))
-            if is_room_free(room_id): 
-                if register_room_in_firebase(room_id, url=get_base_url()):
-                    print(f"[reg_room] Registered new room: {room_id}")
-                    return {"room_id": room_id, "url": get_base_url()}
-                else:
-                    cached = None
-                    retries += 1
-                    if retries >= max_retries:
-                        print("🚫 Max retries reached registering room. Exiting.")
-                        sys.exit(1)
-                    time.sleep(retry_delay)
-                    print(f"[reg_room] Failed to register room ID {room_id}, retrying...")
-                    continue
-                    
-            else:
-                print(f"[reg_room] Room ID {room_id} already taken, retrying...")
+        print("[reg_room] No cached room found.")
+        return None
+        
     except Exception as e:
         print(f"🚫 Error in get_room: {e}")
         sys.exit(1)
@@ -845,8 +826,6 @@ async def get_auth_token():
     # Pull credentials from environment
     client_id = CLIENT_ID
     client_secret = CLIENT_SECRET
-    global pending_auth
-
     # Build auth URL (for browser redirect)
     params = {
         "client_id": client_id,
@@ -870,24 +849,14 @@ async def get_auth_token():
         if r.status_code != 200:
             return {"error": "invalid_creds"}
 
-    # Cache creds and auth URL
-    pending_auth[client_id] = {
-        "client_secret": client_secret,
-        "auth_url": auth_url,
-    }
-
     return {"ok": True, "auth_url": auth_url}
 
 
 
 @router.get("/redirect/")
 async def redirect_to_spotify(client_id: str):
-    global pending_auth
-
-    await get_auth_token()
-    if client_id not in pending_auth:
-        raise HTTPException(status_code=400, detail="unknown_client")
-    return RedirectResponse(pending_auth[client_id]["auth_url"])
+    auth_url = await get_auth_token()
+    return RedirectResponse(auth_url["auth_url"])
 
 @router.get("/check")
 def check():
@@ -901,8 +870,8 @@ async def callback(code: str | None = Query(None), query_state: str | None = Que
     global tokens
     global callback_completed
     global state  # the global dict
-    global pending_auth
-
+    global CLIENT_SECRET
+    
     if error:
         callback_completed["denied"] = True
 
@@ -912,12 +881,9 @@ async def callback(code: str | None = Query(None), query_state: str | None = Que
         return callback_completed
 
     client_id = query_state
-    print("Callback received for client_id:", client_id, "pending_auth keys:", list(pending_auth.keys()))
 
-    if client_id not in pending_auth:
-        return {"error": "no_pending_auth"}
 
-    client_secret = pending_auth[client_id]["client_secret"]
+    client_secret = CLIENT_SECRET
 
     data = {
         "grant_type": "authorization_code",
@@ -935,15 +901,35 @@ async def callback(code: str | None = Query(None), query_state: str | None = Que
 
     tokens["access_token"] = token_data["access_token"]
     tokens["refresh_token"] = token_data["refresh_token"]
+    retries = 0
+    if not await get_room():
+        while True:
+                room_id = str(random.randint(10000, 99999))
+                if is_room_free(room_id): 
+                    if register_room_in_firebase(room_id, url=get_base_url()):
+                        global ROOM
+                        ROOM = room_id
+                        print(f"[reg_room] Registered new room: {room_id}")
+                        break
+                    else:
+                        retries += 1
+                        if retries >= 5:
+                            print("🚫 Max retries reached registering room. Exiting.")
+                            sys.exit(1)
+                        time.sleep(500)
+                        print(f"[reg_room] Failed to register room ID {room_id}, retrying...")
+                        continue
+                        
+                else:
+                    print(f"[reg_room] Room ID {room_id} already taken, retrying...")
     put_refresh_token(tokens["refresh_token"])
     set_key(".env", "CLIENT_ID", client_id)
     set_key(".env", "CLIENT_SECRET", client_secret)
     set_key(".env", "ACCESS_TOKEN", tokens["access_token"])
     set_key(".env", "REFRESH_TOKEN", tokens["refresh_token"])
 
-    pending_auth.pop(client_id, None)
     callback_completed = {"ok": True, "rt": tokens["refresh_token"]}
-    print("ENV Valid, starting to cache progress")
+    print("[CALLBACK] ENV Valid, starting to cache progress")
 
     # Use the global state dict now
     state["env_valid"] = True  

@@ -72,6 +72,8 @@ async def serve_frontend(request: Request, full_path: str):
     global state
     if(get_refresh_token()):
         state["env_valid"] = True
+    else:
+        state["env_valid"] = False
     token = request.cookies.get(COOKIE_NAME)
     is_valid = token and _unsign(token)
     # print(is_valid,state['env_valid'])
