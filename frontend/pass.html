@@ -321,7 +321,7 @@
 
           // 2️⃣ Open popup (this now works because it’s triggered by the button click)
           const width = 480;
-          const height = 720;
+          const height = 950;
           const left = window.screenX + (window.outerWidth - width) / 2;
           const top = window.screenY + (window.outerHeight - height) / 2 + 55;
 
@@ -344,8 +344,8 @@
             //console.log(data);
             if (data.denied) {
               console.error("Denied manually:", data.error);
-              return "Denied";
               popup.close();
+              return "Denied";
               break;
             }
             if (data.ok) {
