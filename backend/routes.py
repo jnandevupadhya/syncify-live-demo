@@ -84,7 +84,8 @@ def get_base_url():
     
 SPOTIFY_AUTH_URL = "https://accounts.spotify.com/authorize"
 SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token"
-REDIRECT_URI = get_base_url() + "/api/callback"
+REDIRECT_URI = get_base_url() + "/api/callback" if get_base_url()!="http://localhost:8000" else "http://127.0.0.1:8000/api/callback" 
+print(REDIRECT_URI)
 SCOPES = "user-read-playback-state user-modify-playback-state user-read-currently-playing user-read-private"
 state["env_valid"] = False
 terminal_logs: list[str] = []
