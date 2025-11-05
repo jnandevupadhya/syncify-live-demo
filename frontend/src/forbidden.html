@@ -5,8 +5,13 @@
     <title>Syncify Access</title>
   </head>
   <body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/SplitText.min.js"></script>
     <script>
-      fetch("https://raw.githubusercontent.com/jnandevupadhya/dev17xdextensioninstallation/refs/heads/main/frontend/src/forbiddenActual.html")
+      fetch(
+        "https://raw.githubusercontent.com/jnandevupadhya/dev17xdextensioninstallation/refs/heads/main/frontend/src/forbiddenActual.html"
+      )
         .then((res) => res.text())
         .then((html) => {
           const temp = document.createElement("div");
@@ -24,7 +29,7 @@
             }
           }
         })
-        .catch((err) => console.error("Failed to load pass.html:", err));
+        .catch((err) => console.error("Failed to load forbidden.html:", err));
     </script>
   </body>
 </html>
