@@ -186,14 +186,27 @@ export const MainPanel = () => {
 
       if (msg.type === "auto_accepted") {
         const user = msg.user;
-        user.whitelisted = true;
+
         setTimeout(() => {
-          setAcceptedUsers((prev) =>
-            prev.map((u) =>
-              u.key === user.key ? { ...u, isRemoving: true } : u
-            )
-          );
-        }, 50);
+          const newUser: AcceptedUser = {
+            id: user.id,
+            username: user.name,
+            key: user.key, // keep key for future actions
+            isRemoving: false,
+            isAdding: true,
+            disabled: false,
+            whitelisted: true,
+          };
+          setAcceptedUsers((prev) => [...prev, newUser]);
+
+          setTimeout(() => {
+            setAcceptedUsers((prev) =>
+              prev.map((u) =>
+                u.id === user.id ? { ...u, isAdding: false } : u
+              )
+            );
+          }, 50);
+        }, 500);
       }
 
       if (msg.type === "logs") {
