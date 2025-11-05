@@ -59,6 +59,7 @@ request_list: List[User] = []
 connected_frontends: list[WebSocket] = []
 kicked_users = {}
 previous_disables = []
+
 KICK_TIMEOUT = 15  # seconds
 
 router = APIRouter()
@@ -120,6 +121,26 @@ def _derive_key() -> bytes:
 
 KEY = _derive_key()
 
+
+def get_whitelist():
+    """
+    Retrieves the current whitelist from Firebase for the room.
+    """
+    global ROOM
+    room_id = ROOM
+    if not room_id:
+        print("[whitelist] ⚠️ No valid room found")
+        return {}
+
+    whitelist_url = f"{FIREBASE_BASE}/rooms/{room_id}/whitelist.json"
+    data = _firebase_get(whitelist_url)
+    if not data:
+        print("[whitelist] ⚠️ Whitelist empty or unavailable")
+        return {}
+
+    return data
+
+whitelist = get_whitelist()
 # === App ===
 app = FastAPI()
 
@@ -280,6 +301,7 @@ async def join_request(user: User):
 
 @router.post("/set-scope")
 async def set_scope(req: ScopeRequest, x_user_key: str = Header(...)): 
+    global previous_disables
     action = req.action
 
     if action in ["accept", "reject"]:
@@ -290,7 +312,7 @@ async def set_scope(req: ScopeRequest, x_user_key: str = Header(...)):
         if action == "accept":
             request_list.remove(user)
             user.isAllowed = True
-            user.canControl = True
+            user.canControl = user.key not in previous_disables
             allow_list.append(user)
             
             if req.whitelisted:
@@ -589,14 +611,14 @@ async def current_track(
     if user:
         if is_whitelisted(user.key):
             user.isAllowed = True
-            user.canControl = user.key in previous_disables == False
+            user.canControl = new_user.key not in previous_disables
             user.whitelisted = True
             allow_list.append(user)
             request_list.remove(user)
             for ws in connected_frontends:
                 await ws.send_json({
                     "type": "auto_accepted",
-                    "user": {"name": user.name, "key": user.key}
+                    "user": {"name": user.name, "key": user.key, "canControl": user.canControl}
                 })
             await broadcast_log(f"🟢 Auto-accepted whitelisted user: {user.name} ({user.key[:6]}...)")
             return {"status": "accepted", "user": {"name": user.name, "key": user.key}}
@@ -610,27 +632,28 @@ async def current_track(
     
     if is_whitelisted(new_user.key):
         new_user.isAllowed = True
-        new_user.canControl = new_user.key in previous_disables == False
+        new_user.canControl = new_user.key not in previous_disables
         new_user.whitelisted = True
         allow_list.append(new_user)
         request_list.remove(new_user)
         for ws in connected_frontends:
             await ws.send_json({
                 "type": "auto_accepted",
-                "user": {"name": new_user.name, "key": new_user.key}
+                "user": {"name": new_user.name, "key": new_user.key, "canControl": new_user.canControl}
             })
 
         await broadcast_log(f"🟢 Auto-accepted whitelisted user: {new_user.name} ({new_user.key[:6]}...)")
-        return {"status": "accepted", "user": {"name": new_user.name, "key": new_user.key}}
+        return {"status": "accepted", "user": {"name": new_user.name, "key": new_user.key, "canControl": new_user.canControl}}
 
     # Notify hosts
     for ws in connected_frontends:
         await ws.send_json({
             "type": "new_request",
-            "user": {"name": new_user.name, "key": new_user.key}
+            "user": {"name": new_user.name, "key": new_user.key, "canControl": new_user in previous_disables}
         })
 
     return {"status": "pending", "isAllowed": False, "canControl": False}
+
 
 
 
@@ -638,20 +661,9 @@ def is_whitelisted(user_key: str) -> bool:
     """
     Encrypts the given key and checks if the encoded cipher exists in Firebase whitelist.
     """
-    global ROOM
-    room_id = ROOM
-    if not room_id:
-        print("[check] ⚠️ No valid room found")
-        return False
-
-    whitelist_url = f"{FIREBASE_BASE}/rooms/{room_id}/whitelist.json"
-    data = _firebase_get(whitelist_url)
-    if not data:
-        print("[check] ⚠️ Whitelist empty or unavailable")
-        return False
-
+    global whitelist
     encoded = encrypt_value(user_key)
-    return encoded in data
+    return encoded in whitelist
     
 
 @router.get("/queue/")

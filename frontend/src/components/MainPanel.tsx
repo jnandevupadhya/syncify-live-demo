@@ -5,7 +5,7 @@ import { toast } from "@/hooks/use-toast";
 import reqNotif from "@/sounds/newReq.mp3";
 import accNotif from "@/sounds/accepted.mp3";
 import leaveNotif from "@/sounds/left.mp3";
-
+const logging = false;
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -75,7 +75,7 @@ export const MainPanel = () => {
       const room = await fetch("/api/room/");
       const data = await room.json();
       setRoom((prev) => ({ ...prev, id: data.data.room_id }));
-      console.log(data);
+      if (logging) console.log(data);
     };
     fetchRoom();
 
@@ -90,7 +90,7 @@ export const MainPanel = () => {
       const msg = JSON.parse(event.data);
 
       if (msg.type === "rehydrate") {
-        console.log("rehydrating:", msg.requests, msg.allowed);
+        if (logging) console.log("rehydrating:", msg.requests, msg.allowed);
 
         setTerminalLines(msg.logs ?? []); // hydrate logs
         // populate pending requests
@@ -105,7 +105,7 @@ export const MainPanel = () => {
             whitelisted: isUserWhitelisted(user.key) || user.whitelisted,
           })) as UserRequest[]
         );
-        console.log(requests);
+        if (logging) console.log(requests);
 
         // populate allowed users
         setAcceptedUsers(
@@ -138,7 +138,7 @@ export const MainPanel = () => {
               key: user.key,
               isAdding: true,
               isRemoving: false,
-              disabled: false,
+              disabled: !user.canControl,
               whitelisted: user.whitelisted,
             };
 
@@ -194,7 +194,7 @@ export const MainPanel = () => {
             key: user.key, // keep key for future actions
             isRemoving: false,
             isAdding: true,
-            disabled: false,
+            disabled: !user.canControl,
             whitelisted: true,
           };
           setAcceptedUsers((prev) => [...prev, newUser]);
@@ -211,7 +211,7 @@ export const MainPanel = () => {
 
       if (msg.type === "logs") {
         {
-          console.log("added a new log");
+          if (logging) console.log("added a new log");
           setTimeout(() => {
             setTerminalLines((prev) => [...prev, msg.message]);
           }, 100);
@@ -221,6 +221,7 @@ export const MainPanel = () => {
         const user = msg.user;
         const animationDuration = 500; // match your CSS animation duration
         leftAudio.play();
+
         // Mark as removing
         setRequests((prev) =>
           prev.map((req) =>
@@ -261,7 +262,8 @@ export const MainPanel = () => {
             document.title = originalTitle;
           }, 5000);
           acceptRequest(req.id);
-          console.log(`${req.username} (id ${req.id}) auto-accepted ✅`);
+          if (logging)
+            console.log(`${req.username} (id ${req.id}) auto-accepted ✅`);
         }, 1000);
 
         timers.push(timerId);
@@ -331,9 +333,8 @@ export const MainPanel = () => {
 
   const acceptRequest = async (id: number) => {
     accReqAudio.play();
-    console.log("Entered accept func");
     const request = requests.find((req) => req.id === id);
-    console.log(request);
+    if (logging) console.log(request);
     if (!request || !request.key) return; // make sure key exists
 
     try {
@@ -364,7 +365,7 @@ export const MainPanel = () => {
           key: request.key, // keep key for future actions
           isRemoving: false,
           isAdding: true,
-          disabled: false,
+          disabled: request.disabled,
           whitelisted: request.whitelisted,
         };
         setAcceptedUsers((prev) => [...prev, newUser]);
@@ -483,10 +484,10 @@ export const MainPanel = () => {
     if (whitelist.includes(user.key)) {
       // Remove if already whitelisted
       whitelist = whitelist.filter((key) => key !== user.key);
-      console.log("removed from whitelist");
+      if (logging) console.log("removed from whitelist");
     } else {
       // Add if not present
-      console.log("added to whitelist");
+      if (logging) console.log("added to whitelist");
       whitelist.push(user.key);
     }
 
@@ -575,7 +576,7 @@ export const MainPanel = () => {
 
   return (
     <div
-      className="relative flex flex-col w-full max-h-[calc(100vh-20.7%-2rem)] mt-[13vh] overflow-visible"
+      className="relative flex flex-col w-full max-h-[calc(100vh-20.7%-2rem)] mt-[12vh] overflow-visible"
       style={{ height: "calc(100vh-20.7%-2rem)" }}
     >
       <div className=" flex gap-12 w-full mx-auto animate-fade-in2 -translate-y-2/3 duration-300">
@@ -961,19 +962,19 @@ export const MainPanel = () => {
           <div
             className={`opacity-100 absolute right-0 top-[25vh] translate-x-[-5vw] -translate-y-1/2 w-1/4 max-w-sm z-10 transition-opacity duration-300 `}
           >
-            <div className="queues crafty bg-card/80 backdrop-blur-sm rounded-xl p-6 border border-border shadow-2xl min-h-[100px]">
+            <div className="queues crafty bg-card/80 backdrop-blur-sm rounded-xl p-6 pb-2 border border-border shadow-2xl min-h-[100px]">
               <h3 className="text-3xl text-center font-semibold text-primary mb-4">
                 Join Requests
               </h3>
               <div className="">
-                <div className="flex items-center justify-center text-center">
-                  <p
-                    className={`text-muted-foreground text-lg ${
-                      requests.length == 0
-                        ? "opacity-100 max-h-[40px]"
-                        : "opacity-0 max-h-0`"
-                    }`}
-                  >
+                <div
+                  className={`flex items-center transition-all justify-center text-center ${
+                    requests.length == 0
+                      ? "opacity-100 max-h-[40px] pb-6"
+                      : "opacity-0 max-h-0"
+                  }`}
+                >
+                  <p className={`text-muted-foreground text-lg `}>
                     No requests in queue
                   </p>
                 </div>

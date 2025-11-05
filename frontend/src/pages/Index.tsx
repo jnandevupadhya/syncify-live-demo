@@ -7,23 +7,11 @@ import { PasswordProtection } from "@/components/PasswordProtection";
 import { useState, useRef, useEffect } from "react";
 
 const Index = () => {
-  const [isUnlocked, setIsUnlocked] = useState(false);
   const [backgroundImage, setBackgroundImage] = useState<string | null>(null);
 
   const [backgroundBlur, setBackgroundBlur] = useState(0);
   const bgRef = useRef<HTMLImageElement | null>(null);
   const bgPickerRef = useRef<BackgroundPickerRef>(null);
-
-  useEffect(() => {
-    const checkUnlock = async () => {
-      const res = await fetch("http://localhost:8000/api/check-unlock", {
-        credentials: "include",
-      });
-      const data = await res.json();
-      if (data.unlocked) setIsUnlocked(true);
-    };
-    checkUnlock();
-  }, []);
 
   const handleBackgroundChange = (
     imageUrl: string | null,
