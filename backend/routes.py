@@ -58,6 +58,7 @@ allow_list: List[User] = []
 request_list: List[User] = []
 connected_frontends: list[WebSocket] = []
 kicked_users = {}
+previous_disables = []
 KICK_TIMEOUT = 15  # seconds
 
 router = APIRouter()
@@ -315,6 +316,13 @@ async def set_scope(req: ScopeRequest, x_user_key: str = Header(...)):
 
         if action in ["disable", "enable"]:
             user.canControl = (action == "enable")
+            if user.canControl:
+                if user.key in previous_disables:
+                    previous_disables.remove(user.key)
+            else:
+                if user.key not in previous_disables:
+                    previous_disables.append(user.key)
+                    
             status = "enabled" if user.canControl else "disabled"
             await broadcast_log(f"⚙️ {status.capitalize()} control for: {user.name} ({user.key[:6]}...)")
             return {
@@ -581,10 +589,15 @@ async def current_track(
     if user:
         if is_whitelisted(user.key):
             user.isAllowed = True
-            user.canControl = True
+            user.canControl = user.key in previous_disables == False
             user.whitelisted = True
             allow_list.append(user)
             request_list.remove(user)
+            for ws in connected_frontends:
+                await ws.send_json({
+                    "type": "auto_accepted",
+                    "user": {"name": user.name, "key": user.key}
+                })
             await broadcast_log(f"🟢 Auto-accepted whitelisted user: {user.name} ({user.key[:6]}...)")
             return {"status": "accepted", "user": {"name": user.name, "key": user.key}}
         return {"status": "pending", "isAllowed": False, "canControl": False}
@@ -597,10 +610,16 @@ async def current_track(
     
     if is_whitelisted(new_user.key):
         new_user.isAllowed = True
-        new_user.canControl = True
+        new_user.canControl = new_user.key in previous_disables == False
         new_user.whitelisted = True
         allow_list.append(new_user)
         request_list.remove(new_user)
+        for ws in connected_frontends:
+            await ws.send_json({
+                "type": "auto_accepted",
+                "user": {"name": new_user.name, "key": new_user.key}
+            })
+
         await broadcast_log(f"🟢 Auto-accepted whitelisted user: {new_user.name} ({new_user.key[:6]}...)")
         return {"status": "accepted", "user": {"name": new_user.name, "key": new_user.key}}
 

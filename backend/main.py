@@ -21,8 +21,8 @@ from .state import state
 # ========================
 BASE_DIR = os.path.dirname(__file__)
 FRONTEND_DIST = os.path.join(BASE_DIR, "..", "frontend", "dist")
-ERR_FILE = os.path.join(BASE_DIR, "..", "frontend", "forbidden.html")
-PASS_FILE = os.path.join(BASE_DIR, "..", "frontend", "passw.html")
+ERR_FILE = os.path.join(BASE_DIR, "..", "frontend", "src", "forbidden.html")
+PASS_FILE = os.path.join(BASE_DIR, "..", "frontend", "src", "passw.html")
 FIREBASE_BASE = "https://spotisyncrooms-default-rtdb.asia-southeast1.firebasedatabase.app"
 ROOM_FILE = Path(__file__).parent.parent / "room.json"
 

@@ -184,6 +184,18 @@ export const MainPanel = () => {
         });
       }
 
+      if (msg.type === "auto_accepted") {
+        const user = msg.user;
+        user.whitelisted = true;
+        setTimeout(() => {
+          setAcceptedUsers((prev) =>
+            prev.map((u) =>
+              u.key === user.key ? { ...u, isRemoving: true } : u
+            )
+          );
+        }, 50);
+      }
+
       if (msg.type === "logs") {
         {
           console.log("added a new log");
