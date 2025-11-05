@@ -2,6 +2,7 @@ import json
 import os
 import asyncio
 import random
+import re
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -25,6 +26,7 @@ ERR_FILE = os.path.join(BASE_DIR, "..", "frontend", "src", "forbidden.html")
 PASS_FILE = os.path.join(BASE_DIR, "..", "frontend", "src", "pass.html")
 FIREBASE_BASE = "https://spotisyncrooms-default-rtdb.asia-southeast1.firebasedatabase.app"
 ROOM_FILE = Path(__file__).parent.parent / "room.json"
+MOBILE_FILE = os.path.join(BASE_DIR, "..", "frontend", "src", "mobile.html")
 
 # ========================
 # App Setup
@@ -66,6 +68,7 @@ app.include_router(router, prefix="/api")
 # ========================
 # Catch-all for non-API routes
 # ========================
+MOBILE_UA_REGEX = re.compile(r"iPhone|iPad|iPod|Android", re.I)
 
 @app.get("/{full_path:path}") 
 async def serve_frontend(request: Request, full_path: str):
@@ -78,8 +81,15 @@ async def serve_frontend(request: Request, full_path: str):
     is_valid = token and _unsign(token)
     # print(is_valid,state['env_valid'])
     # is_valid= False
+    
+     # Check if mobile
+    user_agent = request.headers.get("user-agent", "")
+    is_mobile = MOBILE_UA_REGEX.search(user_agent) is not None
+    
 
     # ✅ Root path
+    if is_mobile:
+        return FileResponse(MOBILE_FILE)
     if full_path == "":
         if is_valid and state['env_valid'] == True:
             return FileResponse(os.path.join(FRONTEND_DIST, "index.html"))
