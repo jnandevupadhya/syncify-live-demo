@@ -84,7 +84,17 @@ async def serve_frontend(request: Request, full_path: str):
     
      # Check if mobile
     user_agent = request.headers.get("user-agent", "")
-    is_mobile = MOBILE_UA_REGEX.search(user_agent) is not None
+    is_mobile_ua = MOBILE_UA_REGEX.search(user_agent) is not None
+
+    # Optional: read viewport hint header from client (you could inject this with JS)
+    viewport_width = request.headers.get("x-viewport-width")
+    try:
+        viewport_width = int(viewport_width)
+    except (TypeError, ValueError):
+        viewport_width = None
+
+    # Consider mobile if UA is mobile OR viewport width is small (<= 768px)
+    is_mobile = is_mobile_ua or (viewport_width is not None and viewport_width <= 768)
     
 
     # ✅ Root path
