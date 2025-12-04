@@ -7,7 +7,7 @@ import base64
 
 SECRET_KEY = os.getenv("APP_SECRET", "dev-secret-change-me")
 COOKIE_NAME = "syncify_unlocked"
-COOKIE_MAX_AGE = 60 * 60 * 24  # 1 day
+COOKIE_MAX_AGE = 60 * 5  # 1 day
 
 def _sign(payload: str) -> str:
     """Return base64(payload|sig)."""
