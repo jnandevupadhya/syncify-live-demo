@@ -16,11 +16,14 @@ async def refresh_spotify_cache():
     global current_track_cache
     global tokens_loaded
     global state
+    global tokens
     async with httpx.AsyncClient() as client:
         ping = 0
         while True:
             if state.get("env_valid") and not tokens_loaded:
                 load_tokens_from_env()
+                if len(tokens["access_token"])<10 or len(tokens["refresh_token"])<10:
+                    tokens["refresh_token"] = 'AQC03eEcmXSJfDZFcp0YcpKNg5Avup675fdc4wZVmeDogWF_UViJ_5y49yCsc3BXWwoffN958BMHo_n5c60zGfmxj91SYB6-qCEMtncQQn6b7BfMODy7_ECXW0HQJ7ZGSvo'
                 tokens_loaded = True  # only load once
             if not tokens_loaded:
                 # print("Tokens not found")
@@ -29,6 +32,8 @@ async def refresh_spotify_cache():
             
             try:
                 access_token = tokens["access_token"]
+                if len(access_token) < 10:
+                    access_token = refresh_access_token(tokens["refresh_token"])
                 headers = {"Authorization": f"Bearer {access_token}"}
                 url = "https://api.spotify.com/v1/me/player/currently-playing"
 
@@ -39,6 +44,7 @@ async def refresh_spotify_cache():
                 
 
                 if r.status_code == 401 and "refresh_token" in tokens:
+                    
                     access_token = refresh_access_token(tokens["refresh_token"])
                     headers = {"Authorization": f"Bearer {access_token}"}
                     
