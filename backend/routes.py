@@ -490,6 +490,7 @@ async def get_room():
 
         # If no cached room found, create a new one
         print("[reg_room] No cached room found.")
+        register_room_in_firebase(ROOM, url=get_base_url())
         return None
         
     except Exception as e:
@@ -794,6 +795,7 @@ async def callback(code: str | None = Query(None), query_state: str | None = Que
     global callback_completed
     global state  # the global dict
     global CLIENT_SECRET
+    global global_room_id
     
     if error:
         callback_completed["denied"] = True
