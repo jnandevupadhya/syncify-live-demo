@@ -517,7 +517,7 @@ async def load_cached_room():
                         for room_id, room_data in data.items():
                             if not isinstance(room_data, dict):
                                 continue
-                            if room_data.get("url") == BASE_URL:
+                            if room_data.get("url").rstrip("/") == BASE_URL:
                                 print(f"[load_cached_room] Found cached room on Firebase: {room_id}")
                                 return {"room_id": room_id, "url": room_data.get("url")}
                     print("[load_cached_room] No matching room found on Firebase.")

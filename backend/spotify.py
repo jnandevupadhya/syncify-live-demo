@@ -156,36 +156,7 @@ def get_refresh_token():
         if result:
             room_id, rt = result
     """
-    print("[firebase] Attempting to get refresh_token for current app URL...")
-    try:
-        base_url = get_base_url().rstrip("/").lower()
-
-        resp = requests.get(f"{FIREBASE_BASE}/rooms.json", timeout=10)
-        if resp.status_code != 200:
-            print(f"[firebase] Failed to fetch rooms: status {resp.status_code}")
-            return None
-
-        rooms = resp.json() or {}
-        if not isinstance(rooms, dict):
-            print("[firebase] Invalid rooms payload")
-            return None
-
-        for room_id, info in rooms.items():
-            if not isinstance(info, dict):
-                continue
-            room_url = str(info.get("url", "")).rstrip("/").lower()
-            # match exact base_url or startswith (if your stored url may include paths)
-            if room_url == base_url or room_url.startswith(base_url + "/"):
-                refresh_token = info.get("refresh_token")
-                return (room_id, refresh_token) if refresh_token else None
-
-        # no matching room found
-        print(f"[firebase] No room found matching base URL {base_url}")
-        return None
-
-    except Exception as e:
-        print(f"[firebase] Exception in get_refresh_token: {e}")
-        return None
+    return "AQBIXQ_xjSO-r9raoEGvHdYfE0E2JI6xDGXIpeIEchBJs-n8BH5cF9G4uf1iziCyQKnmwkud9SFYBeMprQzNHjvdQQVNzcB7Lf89tZFgwbNGc32zmmldst5ujdzng0bo2JI"
 
 def is_room_free(room_id: str):
     try:
